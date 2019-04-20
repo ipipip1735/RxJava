@@ -60,13 +60,13 @@ public class ObservableTrial {
 
         /*===================钩子函数=====================*/
 //        observableTrial.doOnSubscribe();
-        observableTrial.doOnDispose();
+//        observableTrial.doOnDispose();
 //        observableTrial.doOnError();
 ////        observableTrial.doOnNext();
 //        observableTrial.doOnComplete();
         /*-----------------*/
-//        observableTrial.doOnEach();//*****
-//        observableTrial.doOnLifecycle();
+//        observableTrial.doOnEach();
+        observableTrial.doOnLifecycle();
 //        observableTrial.doOnTerminate();
 
 
@@ -406,64 +406,80 @@ public class ObservableTrial {
 
 
     private void doOnComplete() {
+        Observable.fromArray(1, 1, 2, 2).doOnComplete(new Action() {
+            @Override
+            public void run() throws Exception {
+                System.out.println("~~doOnComplete.Action.run~~");
+            }
+        }).subscribe(System.out::println);
     }
 
     private void doOnEach() {
 
-//        //创建观察者
-//        Observer observer = new Observer<Object>() {
-//            Disposable disposable = null;
-//
-//            @Override
-//            public void onSubscribe(Disposable d) {
-//                System.out.println("~~onSubscribe~~");
-//                System.out.println("Disposable is " + d.hashCode() + "|" + d);
-//
-//                disposable = d;
-//            }
-//
-//            @Override
-//            public void onNext(Object o) {
-//                System.out.println("~~onNext~~");
-//                System.out.println("o is " + o);
-//
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//                System.out.println("~~onError~~");
-//
-//            }
-//
-//            @Override
-//            public void onComplete() {
-//                System.out.println("~~onComplete~~");
-//
-//            }
-//        };
-//
-//
-//        //创建发射器
-//        ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe<String>() {
-//            @Override
-//            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
-//                System.out.println("===subscribe===");
-//                System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
-//
-//
-//                for (int i = 0; i < 5; i++) {
-//                    emitter.onNext("oooo-" + i);
-//                }
-//                emitter.onComplete();
-//
-//
-//            }
-//        };
-//
-//        //创建被观察者
-//        Observable<String> observable = Observable.create(observableOnSubscribe)
-//                .doOnEach();
-//        observable.subscribe(observer); //注册观察者
+        //创建观察者
+        Observer observer = new Observer<Object>() {
+            Disposable disposable = null;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                System.out.println("~~onSubscribe~~");
+                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+
+                disposable = d;
+            }
+
+            @Override
+            public void onNext(Object o) {
+                System.out.println("~~onNext~~");
+                System.out.println("o is " + o);
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("~~onError~~");
+
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("~~onComplete~~");
+
+            }
+        };
+
+
+        //创建发射器
+        ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+                System.out.println("===subscribe===");
+                System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
+
+
+                for (int i = 0; i < 5; i++) {
+                    emitter.onNext("oooo-" + i);
+                }
+//                emitter.onError(new Throwable("xxxx"));
+                emitter.onComplete();
+
+
+            }
+        };
+
+        //创建被观察者
+        Observable<String> observable = Observable.create(observableOnSubscribe)
+                .doOnEach(new Consumer<Notification>() {
+                    @Override
+                    public void accept(Notification notification) throws Exception {
+                        System.out.println("~~doOnEach.Consumer.accept~~");
+                        System.out.println(notification);
+                        System.out.println("isOnComplete is " + notification.isOnComplete());
+                        System.out.println("isOnError is " + notification.isOnError());
+                        System.out.println("isOnNext is " + notification.isOnNext());
+                    }
+                });
+        observable.subscribe(observer); //注册观察者
 
     }
 
@@ -499,9 +515,92 @@ public class ObservableTrial {
     }
 
     private void doOnError() {
+        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("~~subscribe~~");
+                emitter.onError(new Exception("xxxx"));
+            }
+        })
+                .doOnError(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.out.println("~~doOnError.Consumer.accept~~");
+                        System.out.println(throwable);
+                    }
+                });
+        observable.subscribe();
     }
 
     private void doOnLifecycle() {
+
+        //创建观察者
+        Observer observer = new Observer<Object>() {
+            Disposable disposable = null;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                System.out.println("~~onSubscribe~~");
+                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+
+                disposable = d;
+            }
+
+            @Override
+            public void onNext(Object o) {
+                System.out.println("~~onNext~~");
+                System.out.println("o is " + o);
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("~~onError~~");
+
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("~~onComplete~~");
+
+            }
+        };
+
+
+        //创建发射器
+        ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+                System.out.println("===subscribe===");
+                System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
+
+
+                for (int i = 0; i < 5; i++) {
+                    emitter.onNext("oooo-" + i);
+                }
+//                emitter.onError(new Throwable("xxxx"));
+                emitter.onComplete();
+
+
+            }
+        };
+
+        //创建被观察者
+        Observable<String> observable = Observable.create(observableOnSubscribe)
+                .doOnLifecycle(new Consumer<Disposable>() {
+                    @Override
+                    public void accept(Disposable disposable) throws Exception {
+                        System.out.println("~~doOnLifecycle.Consumer.accept~~");
+                        System.out.println("disposable is " + disposable);
+
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("~~doOnLifecycle.Action.run~~");
+                    }
+                });
+        observable.subscribe(observer); //注册观察者
     }
 
     private void doOnTerminate() {
