@@ -2,10 +2,7 @@ import io.reactivex.*;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
+import io.reactivex.functions.*;
 import io.reactivex.observables.GroupedObservable;
 import io.reactivex.schedulers.Schedulers;
 
@@ -30,18 +27,20 @@ public class ObservableTrial {
 //        observableTrial.range();
 //        observableTrial.repeat();
 //        observableTrial.emptyNeverError();
+//        observableTrial.defer(); //延迟到订阅时创建观察者
+//        observableTrial.using();
         /*-------异步创建----------*/
-//        observableTrial.defer();
 //        observableTrial.interval();
 //        observableTrial.timer();
 //        observableTrial.sampler();
+//        observableTrial.debounce();
 
 
         /*=============中间操作===========================*/
 //        observableTrial.map();
 //        observableTrial.flatMap();
 //        observableTrial.buffer();
-//        observableTrial.groupBy(); //*****
+//        observableTrial.groupBy();
 //        observableTrial.window();
 //        observableTrial.scan();
 //        observableTrial.zip();
@@ -49,7 +48,6 @@ public class ObservableTrial {
 
         /*===================判断函数=====================*/
 //        observableTrial.contains();
-//        observableTrial.amb(); //使用最先抵达者
 //        observableTrial.all();
 
 
@@ -62,12 +60,12 @@ public class ObservableTrial {
 
         /*===================钩子函数=====================*/
 //        observableTrial.doOnSubscribe();
+        observableTrial.doOnDispose();
 //        observableTrial.doOnError();
 ////        observableTrial.doOnNext();
 //        observableTrial.doOnComplete();
-//        observableTrial.doOnDispose();
         /*-----------------*/
-        observableTrial.doOnEach();
+//        observableTrial.doOnEach();//*****
 //        observableTrial.doOnLifecycle();
 //        observableTrial.doOnTerminate();
 
@@ -75,19 +73,21 @@ public class ObservableTrial {
 
 
 
-        /*========================================*/
-//        observableTrial.using();
-//        observableTrial.debounce();
-//        observableTrial.filter();
+        /*=================顾虑函数=======================*/
+//        observableTrial.distinct();
+//        observableTrial.elementAt();
         /*-----------------*/
-
-
-
-        /*========================================*/
+//        observableTrial.first();
+//        observableTrial.last();
+//        observableTrial.filter();
+//        observableTrial.amb(); //使用最先抵达者
+//        observableTrial.ignoreElements(); //过滤所有元素
+        /*-----------------*/
+//        observableTrial.skip();
+//        observableTrial.take();
 
 
     }
-
 
 
     private void sampler() {
@@ -148,6 +148,108 @@ public class ObservableTrial {
         }
     }
 
+
+    private void distinct() {
+        Observable.fromArray(1, 4, 5, 5, 1, 3)
+                .distinct()
+                .subscribe(System.out::println);
+    }
+
+    private void elementAt() {
+        Observable.range(9, 3)
+                .elementAt(1) //过滤所有元素
+                .subscribe(System.out::println);
+    }
+
+    private void ignoreElements() {
+        Observable.range(0, 5)
+                .ignoreElements() //过滤所有元素
+                .subscribe(System.out::println);
+    }
+
+    private void first() {
+
+
+        //方式一：使用发射器
+//        Single<Integer> single = Observable.create(new ObservableOnSubscribe<Integer>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+//                for (int i = 0; i < 6; i++) {
+//                    emitter.onNext(i);
+//                }
+//
+//                emitter.onComplete();
+//            }
+//        }).first(-2);//直接发送onComplete()，而不发送onNext()将使用默认值-2
+//        single.subscribe(System.out::println);
+
+
+        //方式二
+        Observable.range(0, 6)
+                .first(-2)//直接发送onComplete()，而不发送onNext()将使用默认值-2
+                .subscribe(System.out::println);
+    }
+
+    private void last() {
+        //方式一：使用发射器
+//        Single<Integer> single = Observable.create(new ObservableOnSubscribe<Integer>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+//                for (int i = 0; i < 6; i++) {
+//                    emitter.onNext(i);
+//                }
+//
+//                emitter.onComplete();
+//            }
+//        }).last(-2);//直接发送onComplete()，而不发送onNext()将使用默认值-2
+//        single.subscribe(System.out::println);
+
+
+        //方式二
+        Observable.range(0, 6)
+                .last(-2)//直接发送onComplete()，而不发送onNext()将使用默认值-2
+                .subscribe(System.out::println);
+    }
+
+    private void sample() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                emitter.onNext(2);
+                Thread.sleep(1100L);//超过1秒，所以2可以发送，然后多出100毫秒
+                emitter.onNext(3);
+                Thread.sleep(300L);//100+300小于1秒，3被过滤
+                emitter.onNext(4);
+                Thread.sleep(900L);//100+300+900大于1秒，4可以发送
+                emitter.onNext(5);
+                emitter.onNext(6);
+                emitter.onNext(7);
+                emitter.onNext(8); //最后一个所以直接发送
+                emitter.onComplete();
+            }
+        }).sample(1L, TimeUnit.SECONDS).subscribe(System.out::println);
+
+
+        try {
+            Thread.sleep(3000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void skip() {
+        Observable.range(0, 5).skip(2).subscribe(System.out::println);
+        System.out.println("------");
+        Observable.range(0, 5).skipLast(2).subscribe(System.out::println);
+    }
+
+    private void take() {
+        Observable.range(0, 5).take(2).subscribe(System.out::println);
+        System.out.println("------");
+        Observable.range(0, 5).takeLast(2).subscribe(System.out::println);
+    }
+
     private void filter() {
         Observable<Integer> observable = Observable.range(2, 5)
                 .filter(new Predicate<Integer>() {
@@ -169,17 +271,16 @@ public class ObservableTrial {
                     @Override
                     public void run() {
                         try {
-
-                            emitter.onNext(1); //过滤
-                            emitter.onNext(2); //发送
-                            Thread.sleep(2000L);//大于1秒，所以2可以发送
-                            emitter.onNext(3); //过滤
-                            Thread.sleep(900L);//小于1秒，3被过滤
-                            emitter.onNext(4); //过滤
-                            Thread.sleep(900L);//小于1秒，3被过滤
-                            emitter.onNext(5); //过滤
-                            emitter.onNext(6); //过滤
-                            emitter.onNext(7); //过滤
+                            emitter.onNext(1);
+                            emitter.onNext(2);
+                            Thread.sleep(2000L);//间隔大于1秒，所以2可以发送
+                            emitter.onNext(3);
+                            Thread.sleep(900L);//间隔小于1秒，3被过滤
+                            emitter.onNext(4);
+                            Thread.sleep(900L);//间隔小于1秒，4被过滤
+                            emitter.onNext(5);
+                            emitter.onNext(6);
+                            emitter.onNext(7);
                             emitter.onNext(8); //发送，最后一个所以直接发送
                             emitter.onComplete();
                         } catch (InterruptedException e) {
@@ -195,20 +296,20 @@ public class ObservableTrial {
     }
 
 
-
     private void using() {
 
+        Integer[] integers = {Integer.valueOf(221), Integer.valueOf(211), Integer.valueOf(201)};
+
+        //创建数据集
         Callable<Integer[]> callable = new Callable<Integer[]>() {
             @Override
             public Integer[] call() throws Exception {
                 System.out.println("~~Callable.call~~");
-
-                Integer[] integers = {Integer.valueOf(221), Integer.valueOf(211), Integer.valueOf(201)};
                 return integers;
             }
         };
 
-
+        //创建消费者
         Function<Integer[], Observable<Integer>> function = new Function<Integer[], Observable<Integer>>() {
             @Override
             public Observable<Integer> apply(Integer[] integers) throws Exception {
@@ -219,12 +320,15 @@ public class ObservableTrial {
             }
         };
 
+        //创建回收器
         Consumer<Integer[]> consumer = new Consumer<Integer[]>() {
             @Override
             public void accept(Integer[] integers) throws Exception {
                 System.out.println("~~Consumer.accept~~");
                 System.out.println(integers);
                 for (Integer i : integers) System.out.println(i);
+                integers = null;
+
             }
         };
 
@@ -235,21 +339,6 @@ public class ObservableTrial {
                 System.out.println(integer);
             }
         });
-
-
-
-
-
-//        Observable.fromArray(1, 1, 2, 2)
-//                .timer(1000, TimeUnit.MILLISECONDS)
-//                .subscribe(System.out::println);
-//
-//        try {
-//            Thread.sleep(3000L);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
 
     }
 
@@ -308,7 +397,7 @@ public class ObservableTrial {
                     public boolean test(Integer integer) throws Exception {
                         System.out.println("~~all.Predicate.test~~");
                         System.out.println("integer is " + integer);
-                        return integer>3;
+                        return integer > 3;
                     }
                 });
 
@@ -316,70 +405,107 @@ public class ObservableTrial {
     }
 
 
-    private void doOnComplete(){}
-    private void doOnEach(){
+    private void doOnComplete() {
+    }
 
-        //创建观察者
-        Observer observer = new Observer<Object>() {
-            Disposable disposable = null;
+    private void doOnEach() {
 
-            @Override
-            public void onSubscribe(Disposable d) {
-                System.out.println("~~onSubscribe~~");
-                System.out.println("Disposable is " + d.hashCode() + "|" + d);
-
-                disposable = d;
-            }
-
-            @Override
-            public void onNext(Object o) {
-                System.out.println("~~onNext~~");
-                System.out.println("o is " + o);
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                System.out.println("~~onError~~");
-
-            }
-
-            @Override
-            public void onComplete() {
-                System.out.println("~~onComplete~~");
-
-            }
-        };
-
-
-        //创建发射器
-        ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe<String>() {
-            @Override
-            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
-                System.out.println("===subscribe===");
-                System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
-
-
-                for (int i = 0; i < 5; i++) {
-                    emitter.onNext("oooo-" + i);
-                }
-                emitter.onComplete();
-
-
-            }
-        };
-
-        //创建被观察者
-        Observable<String> observable = Observable.create(observableOnSubscribe)
-                .doOnEach();
-        observable.subscribe(observer); //注册观察者
+//        //创建观察者
+//        Observer observer = new Observer<Object>() {
+//            Disposable disposable = null;
+//
+//            @Override
+//            public void onSubscribe(Disposable d) {
+//                System.out.println("~~onSubscribe~~");
+//                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+//
+//                disposable = d;
+//            }
+//
+//            @Override
+//            public void onNext(Object o) {
+//                System.out.println("~~onNext~~");
+//                System.out.println("o is " + o);
+//
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//                System.out.println("~~onError~~");
+//
+//            }
+//
+//            @Override
+//            public void onComplete() {
+//                System.out.println("~~onComplete~~");
+//
+//            }
+//        };
+//
+//
+//        //创建发射器
+//        ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe<String>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+//                System.out.println("===subscribe===");
+//                System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
+//
+//
+//                for (int i = 0; i < 5; i++) {
+//                    emitter.onNext("oooo-" + i);
+//                }
+//                emitter.onComplete();
+//
+//
+//            }
+//        };
+//
+//        //创建被观察者
+//        Observable<String> observable = Observable.create(observableOnSubscribe)
+//                .doOnEach();
+//        observable.subscribe(observer); //注册观察者
 
     }
-    private void doOnDispose(){}
-    private void doOnSubscribe(){}
-    private void doOnError(){}
-    private void doOnLifecycle(){}
-    private void doOnTerminate(){}
+
+    private void doOnDispose() {
+        Disposable disposable = Observable.interval(1, TimeUnit.SECONDS)
+                .doOnDispose(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("~~doOnDispose.Action.run~~");
+                    }
+                }).subscribe(System.out::println);
+
+        try {
+            Thread.sleep(2000L);
+            disposable.dispose();//2秒后取消订阅
+            Thread.sleep(4000L);//4秒后主线程结束，interval()启动的守护线程也将自带关闭
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void doOnSubscribe() {
+        Observable<Integer> observable = Observable.fromArray(1, 1, 2, 2)
+                .doOnSubscribe(new Consumer<Disposable>() {
+                    @Override
+                    public void accept(Disposable disposable) throws Exception {
+                        System.out.println("~~doOnSubscribe.Consumer.accept~~");
+                        System.out.println(disposable);
+                    }
+                });
+        observable.subscribe();
+    }
+
+    private void doOnError() {
+    }
+
+    private void doOnLifecycle() {
+    }
+
+    private void doOnTerminate() {
+    }
 
 
     private void doOnNext() {
@@ -398,7 +524,7 @@ public class ObservableTrial {
 
         //方式二：使用Lambda表达式
         Observable<Integer> observable = Observable.fromArray(1, 1, 2, 2)
-        .doOnNext(System.out::println);
+                .doOnNext(System.out::println);
         observable.subscribe();
 
     }
@@ -420,15 +546,15 @@ public class ObservableTrial {
     private void scan() {
         Observable<Integer> observable = Observable.range(6, 9)
                 .scan(new BiFunction<Integer, Integer, Integer>() {
-            @Override
-            public Integer apply(Integer integer, Integer integer2) throws Exception {
-                System.out.println("~~scan.BiFunction.apply~~");
-                System.out.println("integer is " + integer);
-                System.out.println("integer2 is " + integer2);
-                System.out.println("------------");
-                return integer2;
-            }
-        });
+                    @Override
+                    public Integer apply(Integer integer, Integer integer2) throws Exception {
+                        System.out.println("~~scan.BiFunction.apply~~");
+                        System.out.println("integer is " + integer);
+                        System.out.println("integer2 is " + integer2);
+                        System.out.println("------------");
+                        return integer2;
+                    }
+                });
         observable.subscribe(new Consumer<Integer>() {
             @Override
             public void accept(Integer integer) throws Exception {
@@ -452,13 +578,14 @@ public class ObservableTrial {
 
 
     private void groupBy() {
-        Observable<GroupedObservable<String, Integer>> observable = Observable.range(0, 12)
+        Observable<GroupedObservable<String, Integer>> observable = Observable.range(3, 7)
                 .groupBy(new Function<Integer, String>() {
                     @Override
                     public String apply(Integer integer) throws Exception {
                         System.out.println("~~groupBy.Function.apply~~");
                         System.out.println("integer is " + integer);
-                        return null;
+
+                        return integer.intValue() % 2 == 0 ? "even" : "odd";
                     }
                 });
 
@@ -467,6 +594,10 @@ public class ObservableTrial {
             public void accept(GroupedObservable<String, Integer> stringIntegerGroupedObservable) throws Exception {
                 System.out.println("~~subscribe.Consumer.accept~~");
                 System.out.println("stringIntegerGroupedObservable is " + stringIntegerGroupedObservable);
+
+                String flag = stringIntegerGroupedObservable.getKey();
+                System.out.println("getKey is " + flag);
+                stringIntegerGroupedObservable.subscribe(integer -> System.out.println(flag + "|" + integer));
             }
         });
 
@@ -488,6 +619,7 @@ public class ObservableTrial {
         Observable<String> observable = Observable.range(2, 6)
                 .flatMap(new Function<Integer, ObservableSource<String>>() {
                     Random random = new Random();
+
                     @Override
                     public ObservableSource<String> apply(Integer integer) {
                         System.out.println("~~flatMap.Function.apply~~");
