@@ -28,16 +28,21 @@ public class ObservableTrial {
 //        observableTrial.repeat();
 //        observableTrial.emptyNeverError();
         /*-------异步创建----------*/
-//        observableTrial.defer();
-//        observableTrial.interval();
-//        observableTrial.timer();
+//        observableTrial.timer(); //定时发送一次
+//        observableTrial.interval(); //间隔发送
 //        observableTrial.sampler();
+        /*-------其他创建----------*/
+//        observableTrial.defer(); //延迟到订阅时创建被观察者
+//        observableTrial.using();//发送完成后销毁资源
 
         /*=================过滤函数=======================*/
-//        observableTrial.using();
-//        observableTrial.debounce(); //设置间隔时间
-//        observableTrial.filter();
+//        observableTrial.distinct();
+//        observableTrial.elementAt();
         /*-----------------*/
+//        observableTrial.amb(); //使用最先抵达者
+//        observableTrial.debounce(); //过滤间隔时间较短的事件
+        /*-----------------*/
+//        observableTrial.filter();
 //        observableTrial.first();
 //        observableTrial.last();
 //        observableTrial.take();
@@ -56,7 +61,6 @@ public class ObservableTrial {
 
         /*===================判断函数=====================*/
 //        observableTrial.contains();
-//        observableTrial.amb(); //使用最先抵达者
 //        observableTrial.all();
 
 
@@ -79,15 +83,17 @@ public class ObservableTrial {
 //        observableTrial.doOnTerminate();
 
 
-        /*=================创建函数=======================*/
-//        observableTrial.using();
+        /*====================连接函数====================*/
+//        observableTrial.connect();
+//        observableTrial.publish();
+//        observableTrial.refCount();
+//        observableTrial.reply();
 
 
 
 
 
 
-        /*========================================*/
 
 
     }
@@ -357,6 +363,19 @@ public class ObservableTrial {
         Observable<Integer> observable = Observable.fromArray(1, 1, 2, 2);
         observable.contains(3).subscribe(System.out::println);
 
+    }
+
+
+    private void distinct() {
+        Observable.fromArray(1, 4, 5, 5, 1, 3)
+                .distinct()
+                .subscribe(System.out::println);
+    }
+
+    private void elementAt() {
+        Observable.range(9, 3)
+                .elementAt(1) //过滤所有元素
+                .subscribe(System.out::println);
     }
 
     private void amb() {
