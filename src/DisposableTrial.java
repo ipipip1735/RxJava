@@ -1,5 +1,6 @@
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.observers.DisposableObserver;
 
 import java.util.concurrent.TimeUnit;
@@ -41,24 +42,30 @@ public class DisposableTrial {
 ////        d.dispose();
 
 
-
     }
 
     private void base() {
+        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
 
-//        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
-//            @Override
-//            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-//                for (int i = 0; i < 10; i++) {
-//                emitter.onNext(i);
-//
-//                }
-//                emitter.onComplete();
-//            }
-//        });
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            for (int i = 0; i < 10; i++) {
+                                Thread.sleep(1000L);
+                                emitter.onNext(i);
+                            }
+                            emitter.onComplete();
 
-
-        Observable<Integer> observable = Observable.fromArray(1,2,3);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
 
 
         //创建观察者
@@ -85,8 +92,30 @@ public class DisposableTrial {
             }
         };
 
-        Disposable disposable = observable.subscribeWith(disposableObserver);
-//        disposable.dispose();
+
+        Disposable disposable = observable
+                .doOnDispose(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("~~doOnDispose.Action.run~~");
+                    }
+                })
+                .subscribeWith(disposableObserver);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3000L);
+                    disposable.dispose();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+
 
     }
 }
