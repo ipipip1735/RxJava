@@ -29,12 +29,12 @@ public class ObservableTrial {
 //        observableTrial.join();
 //        observableTrial.range();
 //        observableTrial.repeat();
-//        observableTrial.emptyNeverError();
+        observableTrial.emptyNeverError();
         /*-------异步创建----------*/
 //        observableTrial.timer(); //定时发送一次
 //        observableTrial.interval(); //间隔发送
 //        observableTrial.sampler();
-        observableTrial.delay();//延迟指定时间开始发送首个onNext事件
+//        observableTrial.delay();//延迟指定时间开始发送首个onNext事件
         /*-------其他创建----------*/
 //        observableTrial.defer(); //延迟到订阅时创建被观察者
 //        observableTrial.using();//发送完成后销毁资源
@@ -158,7 +158,7 @@ public class ObservableTrial {
             @Override
             public void onError(Throwable e) {
                 System.out.println("~~onError~~");
-
+                System.out.println("error is " + e);
             }
 
             @Override
@@ -524,7 +524,7 @@ public class ObservableTrial {
             @Override
             public void onError(Throwable e) {
                 System.out.println("~~onError~~");
-
+                System.out.println("error is " + e);
             }
 
             @Override
@@ -597,6 +597,7 @@ public class ObservableTrial {
             @Override
             public void onError(Throwable e) {
                 System.out.println("~~onError~~");
+                System.out.println("error is " + e);
             }
 
             @Override
@@ -671,6 +672,7 @@ public class ObservableTrial {
             @Override
             public void onError(Throwable e) {
                 System.out.println("~~onError~~");
+                System.out.println("error is " + e);
             }
 
             @Override
@@ -840,19 +842,59 @@ public class ObservableTrial {
     /*========================================*/
 
     private void emptyNeverError() {
-        //方式一
-        Observable.empty().delay(2, TimeUnit.SECONDS).subscribe(System.out::println);
+        //创建观察者
+        Observer observer = new Observer<Object>() {
+            Disposable disposable = null;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                System.out.println("~~onSubscribe~~");
+                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+
+                disposable = d;
+            }
+
+            @Override
+            public void onNext(Object o) {
+                System.out.println("~~onNext~~");
+                System.out.println("o is " + o);
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("~~onError~~");
+                System.out.println("error is " + e);
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("~~onComplete~~");
+
+            }
+        };
+
+        //使用empty
+//        Observable.empty()//仅发送onSubscribe和onComplete事件，不发送任何onNext
+//                .subscribe(observer);
+
+
+        //使用never
+//        Observable.never()//仅发送onSubscribe，没有其他任何事件
+//                .subscribe(observer);
+
+        //使用error
+        Observable.error(new Throwable())//仅发送onSubscribe和onError事件，不发送任何onNext
+                .subscribe(observer);
+
+
+
+
         try {
             Thread.sleep(3000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        //方式二
-//        Observable.never().subscribe(System.out::println);
-
-        //方式三
-//        Observable.error(new Throwable()).subscribe(System.out::println);
     }
 
 
@@ -913,7 +955,7 @@ public class ObservableTrial {
             @Override
             public void onError(Throwable e) {
                 System.out.println("~~onError~~");
-
+                System.out.println("error is " + e);
             }
 
             @Override
@@ -1076,19 +1118,17 @@ public class ObservableTrial {
             public void onNext(Object o) {
                 System.out.println("~~onNext~~");
                 System.out.println("o is " + o);
-
             }
 
             @Override
             public void onError(Throwable e) {
                 System.out.println("~~onError~~");
-
+                System.out.println("error is " + e);
             }
 
             @Override
             public void onComplete() {
                 System.out.println("~~onComplete~~");
-
             }
         };
 
