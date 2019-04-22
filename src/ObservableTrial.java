@@ -59,9 +59,10 @@ public class ObservableTrial {
 //        observableTrial.groupBy();
 //        observableTrial.window();
 //        observableTrial.scan();
-//        observableTrial.zip();
-//        observableTrial.join();
-        observableTrial.merge();
+        observableTrial.zip();
+//        observableTrial.combineLatest();
+//        observableTrial.join();//链接多个被观察者，多个被观察者并行发送
+//        observableTrial.merge();
 
 
 
@@ -71,9 +72,10 @@ public class ObservableTrial {
 
 
         /*===================聚合函数=====================*/
-//        observableTrial.concat();//多个被观察者按顺序依次发送
+//        observableTrial.concat();//合并多个被观察者，多个被观察者按顺序依次发送
 //        observableTrial.count();
 //        observableTrial.reduce();
+//        observableTrial.collect();
 
 
 
@@ -88,8 +90,36 @@ public class ObservableTrial {
 //        observableTrial.doOnLifecycle();
 //        observableTrial.doOnTerminate();
 
+
+
         /*==================连接函数=====================*/
 //        observableTrial.publish();
+
+
+
+        /*==================转换函数=====================*/
+        observableTrial.to();
+
+    }
+
+
+    private void to() {
+
+        /*
+         * 将 被观察者 转换成 任意对象
+         */
+        Observable<Integer> observable = Observable.just(1);
+        String info = observable.to(new Function<Observable<Integer>, String>() {
+            @Override
+            public String apply(Observable<Integer> integerObservable) throws Exception {
+                System.out.println("integerObservable is " + integerObservable);
+                String size = integerObservable.count().toString();
+                return size;
+            }
+        });
+
+        System.out.println(info);
+
 
     }
 
@@ -399,16 +429,41 @@ public class ObservableTrial {
 
 
     private void concat() {
-        //创建2个被观察者，让他们在各自的线程中发送
-        List<Observable<Integer>> list = new ArrayList<>();
-        list.add(Observable.fromArray(11, 12, 14).subscribeOn(Schedulers.io()));
-        list.add(Observable.fromArray(27, 22, 28).subscribeOn(Schedulers.io()));
-        list.add(Observable.fromArray(37, 32, 38).subscribeOn(Schedulers.io()));
-        list.add(Observable.fromArray(47, 42, 48).subscribeOn(Schedulers.io()));
-        list.add(Observable.fromArray(57, 52, 58).subscribeOn(Schedulers.io()));
+        /*
+         * concat()是串行发送，而merge()将并行发送
+         * */
 
-        //让2个被观察者依次发送，一个被观察者onComplete()后才会发送另外一个
-        Observable.concat(list)
+        //创建2个被观察者，让他们工作在各自的线程中
+        Observable<String> observable1 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                Thread.sleep(1000L);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                Thread.sleep(1000L);
+                emitter.onNext(4);
+                emitter.onNext(5);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()).map(integer -> "A|" + integer);
+
+        Observable<String> observable2 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                Thread.sleep(1000L);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                Thread.sleep(1000L);
+                emitter.onNext(4);
+                emitter.onNext(5);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()).map(integer -> "B|" + integer);
+
+
+        Observable.concat(observable1, observable2)//合并2个被观察者
                 .subscribe(integer -> {
                     System.out.println("integer is " + integer);
                     System.out.println(Thread.currentThread());
@@ -417,7 +472,7 @@ public class ObservableTrial {
 
 
         try {
-            Thread.sleep(3000L);
+            Thread.sleep(6000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -723,10 +778,80 @@ public class ObservableTrial {
         observable.subscribe();
 
     }
+    private void combineLatest() {
+
+        /*
+        * combineLatest()和zip()类似，去内部buffer中的值来合并
+        * 但zip是同步的，combineLatest是并发的
+        * */
+        Observable<Integer> observable1 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                Thread.sleep(1000L);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                emitter.onNext(4);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io());
+
+        Observable<Integer> observable2 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(111);
+                emitter.onNext(112);
+                emitter.onNext(113);
+                Thread.sleep(2000L);
+                emitter.onNext(114);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io());
+
+        Observable.combineLatest(observable1, observable2, new BiFunction<Integer, Integer, String>() {
+            @Override
+            public String apply(Integer integer, Integer integer2) throws Exception {
+                System.out.println("~~combineLatest.BiFunction.apply~~");
+                return integer.toString() + "-" + integer2.toString();
+            }
+        }).subscribe(System.out::println);
+
+        try {
+            Thread.sleep(5000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void zip() {
-        Observable<Integer> observable1 = Observable.fromArray(1, 1, 2, 2);
-        Observable<Integer> observable2 = Observable.fromArray(3, 5, 7, 9);
+
+        /*
+         * zip()和combineLatest()类似，去内部buffer中的值来合并
+         * zip是同步的，combineLatest是并发的
+         * */
+        Observable<Integer> observable1 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                Thread.sleep(1000L);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                emitter.onNext(4);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io());
+
+        Observable<Integer> observable2 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(111);
+                emitter.onNext(112);
+                emitter.onNext(113);
+                Thread.sleep(2000L);
+                emitter.onNext(114);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io());
 
         Observable.zip(observable1, observable2, new BiFunction<Integer, Integer, String>() {
             @Override
@@ -735,6 +860,12 @@ public class ObservableTrial {
                 return integer.toString() + "-" + integer2.toString();
             }
         }).subscribe(System.out::println);
+
+        try {
+            Thread.sleep(5000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -795,6 +926,28 @@ public class ObservableTrial {
             }
         });
 
+
+    }
+
+
+    private void collect() {
+
+        /*
+        * 初始化时，给定容器，collect()中将发送的数据保存到容器
+        * collect()和reduce()执行流程差不多
+        * */
+        Single<List<Integer>> single = Observable.range(1, 3)
+                .collect(ArrayList::new,//给定容器
+                        new BiConsumer<List<Integer>, Integer>() {
+                            @Override
+                            public void accept(List<Integer> list, Integer integer2) throws Exception {
+                                System.out.println("~~collect.BiConsumer.accept~~");
+                                System.out.println("integer is " + list);
+                                System.out.println("integer2 is " + integer2);
+                                list.add(integer2);
+                            }
+                        });
+        single.subscribe(System.out::println);
 
     }
 
@@ -928,15 +1081,57 @@ public class ObservableTrial {
 
 
     private void merge() {
+        Observable<String> observable1 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                Thread.sleep(1000L);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                Thread.sleep(1000L);
+                emitter.onNext(4);
+                emitter.onNext(5);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()).map(integer -> "A|" + integer);
 
-        List<Observable<Integer>> list = Arrays.asList(Observable.just(72), Observable.just(173));
-        Observable.just(12)
-                .merge(list)
-        .subscribe(System.out::println);
+        Observable<String> observable2 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                Thread.sleep(1000L);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                Thread.sleep(1000L);
+                emitter.onNext(4);
+                emitter.onNext(5);
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()).map(integer -> "B|" + integer);
+
+        /*
+         * merge()将并行发送，而concat()是串行发送
+         * merge()必须使用子线程才能体现效果，否则将和concat()串行发送
+         * */
+        Observable.merge(observable1, observable2)
+                .subscribe(System.out::println);
+
+
+        try {
+            Thread.sleep(3000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
 
     private void join() {
+        /*
+         * merge()将并行发送，而concat()是串行发送
+         * merge()必须使用子线程才能体现效果，否则将和concat()同样使用串行发送
+         * */
 
         //创建观察者
         Observer observer = new Observer<Integer>() {
@@ -971,6 +1166,7 @@ public class ObservableTrial {
         };
 
 
+        //创建2个被观察者，让他们工作在各自的线程中
         Observable<Integer> origin = Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
@@ -983,19 +1179,21 @@ public class ObservableTrial {
                 emitter.onComplete();
             }
         });
-
         Observable<Integer> other = Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
                 System.out.println("-->>other.create.subscribe<<--");
                 System.out.println("emitter is " + emitter);
 //                Thread.sleep(1100L);
-                emitter.onNext(81);//                emitter.onNext(82);
+                emitter.onNext(81);
+//                 emitter.onNext(82);
 //                emitter.onNext(83);
                 emitter.onComplete();
             }
         });
 
+
+        //创建origin时间窗口
         Function<Integer, Observable<Integer>> leftEnd = new Function<Integer, Observable<Integer>>() {
             @Override
             public Observable<Integer> apply(Integer integer) throws Exception {
@@ -1014,15 +1212,19 @@ public class ObservableTrial {
                 });
             }
         };
+
+        //创建other时间窗口
         Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
             @Override
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~rightEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
                 return Observable.never();
-//                        .delay(3, TimeUnit.SECONDS);
+//                        .delay(3, TimeUnit.SECONDS);//设置延迟
             }
         };
+
+        //创建连接器
         BiFunction<Integer, Integer, Integer> resultSelector = new BiFunction<Integer, Integer, Integer>() {
             @Override
             public Integer apply(Integer integer, Integer integer2) throws Exception {
@@ -1034,19 +1236,13 @@ public class ObservableTrial {
         };
 
 
-        //方式一：同步join
-//        origin.join(other,
-//                leftEnd,
-//                rightEnd,
-//                resultSelector)
-//                .subscribe(observer);
+        origin = origin.subscribeOn(Schedulers.io());//启用子线程
+        other = other.subscribeOn(Schedulers.io());//启用子线程
 
-        //方式二：异步join
-        origin = origin.subscribeOn(Schedulers.io());
-        other = other.subscribeOn(Schedulers.io());
-        origin.join(other,
-                leftEnd,
-                rightEnd,
+
+        origin.join(other, //让origin和other连接
+                leftEnd,//设置时间窗口
+                rightEnd,//设置时间窗口
                 resultSelector)
                 .subscribe(observer);
 
@@ -1059,7 +1255,6 @@ public class ObservableTrial {
 
 
     private void just() {
-
 
         //方式一：使用单值
         Observable<Integer> observable = Observable.just(Integer.valueOf(25));
@@ -1081,6 +1276,7 @@ public class ObservableTrial {
 //        i = 18;////由于观察者创建时，数据源已经保存了引用，所有现在修改引用是无用的
 //        observable.subscribe(System.out::println);
     }
+
 
     private void from() {
 
