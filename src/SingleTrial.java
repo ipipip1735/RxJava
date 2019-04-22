@@ -10,10 +10,11 @@ public class SingleTrial {
     public static void main(String[] args) {
         SingleTrial singleTrial = new SingleTrial();
 
-        singleTrial.last();
-
+//        singleTrial.last();
 //        singleTrial.first();
 //        singleTrial.firstWithCustom();
+
+        singleTrial.create();
     }
 
     private void firstWithCustom() {
@@ -36,5 +37,19 @@ public class SingleTrial {
         Single<Integer> observable = Observable.range(2, 5)
                 .first(4);
         observable.subscribe(System.out::println);
+    }
+
+
+    private void create() {
+
+        Single<Integer> single = Single.create(new SingleOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(SingleEmitter<Integer> emitter) throws Exception {
+                emitter.onSuccess(888);//没有onNext和onComplete事件
+//                emitter.onError(new Throwable("xXx"));
+            }
+        });
+
+        single.subscribe(System.out::println);
     }
 }

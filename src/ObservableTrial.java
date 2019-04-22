@@ -23,7 +23,7 @@ public class ObservableTrial {
 
 
         /*================创建观察者========================*/
-//        observableTrial.create();
+        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
@@ -1317,7 +1317,6 @@ public class ObservableTrial {
             public void onSubscribe(Disposable d) {
                 System.out.println("~~onSubscribe~~");
                 System.out.println("Disposable is " + d.hashCode() + "|" + d);
-
                 disposable = d;
             }
 
