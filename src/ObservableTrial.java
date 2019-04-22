@@ -26,10 +26,9 @@ public class ObservableTrial {
 //        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
-//        observableTrial.join();
 //        observableTrial.range();
 //        observableTrial.repeat();
-        observableTrial.emptyNeverError();
+//        observableTrial.emptyNeverError();
         /*-------异步创建----------*/
 //        observableTrial.timer(); //定时发送一次
 //        observableTrial.interval(); //间隔发送
@@ -61,6 +60,9 @@ public class ObservableTrial {
 //        observableTrial.window();
 //        observableTrial.scan();
 //        observableTrial.zip();
+//        observableTrial.join();
+        observableTrial.merge();
+
 
 
         /*===================判断函数=====================*/
@@ -180,10 +182,6 @@ public class ObservableTrial {
         })
                 .doOnNext(integer -> System.out.println("doOnNext|" + integer));
         observable.delay(3, TimeUnit.SECONDS).subscribe(observer);
-
-
-
-
 
 
         try {
@@ -888,8 +886,6 @@ public class ObservableTrial {
                 .subscribe(observer);
 
 
-
-
         try {
             Thread.sleep(3000L);
         } catch (InterruptedException e) {
@@ -931,6 +927,15 @@ public class ObservableTrial {
     }
 
 
+    private void merge() {
+
+        List<Observable<Integer>> list = Arrays.asList(Observable.just(72), Observable.just(173));
+        Observable.just(12)
+                .merge(list)
+        .subscribe(System.out::println);
+    }
+
+
     private void join() {
 
         //创建观察者
@@ -966,23 +971,47 @@ public class ObservableTrial {
         };
 
 
-        ObservableSource<Integer> other = Observable.create(new ObservableOnSubscribe<Integer>() {
+        Observable<Integer> origin = Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                System.out.println("~~other.create.subscribe~~");
+                System.out.println("-->>origin.create.subscribe<<--");
                 System.out.println("emitter is " + emitter);
                 emitter.onNext(17);
+                Thread.sleep(1000L);
                 emitter.onNext(27);
                 emitter.onNext(37);
                 emitter.onComplete();
             }
         });
+
+        Observable<Integer> other = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("-->>other.create.subscribe<<--");
+                System.out.println("emitter is " + emitter);
+//                Thread.sleep(1100L);
+                emitter.onNext(81);//                emitter.onNext(82);
+//                emitter.onNext(83);
+                emitter.onComplete();
+            }
+        });
+
         Function<Integer, Observable<Integer>> leftEnd = new Function<Integer, Observable<Integer>>() {
             @Override
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~leftEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
-                return Observable.just(555);
+                return Observable.create(new ObservableOnSubscribe<Integer>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                        if (integer.equals(27)) {
+                            emitter.onNext(9527);
+//                            emitter.onNext(414);//按索引清除的，多个onNext是无效的
+//                            emitter.onNext(-56);
+//                            emitter.onNext(44);
+                        }
+                    }
+                });
             }
         };
         Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
@@ -990,13 +1019,14 @@ public class ObservableTrial {
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~rightEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
-                return Observable.just(559).delay(3, TimeUnit.SECONDS);
+                return Observable.never();
+//                        .delay(3, TimeUnit.SECONDS);
             }
         };
         BiFunction<Integer, Integer, Integer> resultSelector = new BiFunction<Integer, Integer, Integer>() {
             @Override
             public Integer apply(Integer integer, Integer integer2) throws Exception {
-                System.out.println("~~resultSelector.BiFunction.apply~~");
+                System.out.println("----resultSelector.BiFunction.apply----");
                 System.out.println("integer is " + integer);
                 System.out.println("integer2 is " + integer2);
                 return integer + integer2;
@@ -1004,46 +1034,27 @@ public class ObservableTrial {
         };
 
 
-        Observable<Integer> observable = Observable.range(88, 3);
+        //方式一：同步join
+//        origin.join(other,
+//                leftEnd,
+//                rightEnd,
+//                resultSelector)
+//                .subscribe(observer);
 
-        observable.join(other, leftEnd, rightEnd, resultSelector)
+        //方式二：异步join
+        origin = origin.subscribeOn(Schedulers.io());
+        other = other.subscribeOn(Schedulers.io());
+        origin.join(other,
+                leftEnd,
+                rightEnd,
+                resultSelector)
                 .subscribe(observer);
-
 
         try {
             Thread.sleep(5000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
-//        Observable<Integer> o1 = Observable.just(1, 2, 3);
-//        Observable<Integer> o2 = Observable.just(4, 5, 6);
-//        Observable<Integer> o3 = Observable.just(7, 8, 9);
-//
-//        o1.join(o2, new Function<Integer, ObservableSource<String>>() {
-//            @Override
-//            public ObservableSource<String> apply(@NonNull Integer integer) throws Exception {
-//                return Observable.just(integer + "-o1").delay(200, TimeUnit.MILLISECONDS);
-//            }
-//        }, new Function<Integer, ObservableSource<String>>() {
-//            @Override
-//            public ObservableSource<String> apply(@NonNull Integer integer) throws Exception {
-//                return Observable.just(integer + "-o2").delay(200, TimeUnit.MILLISECONDS);
-//            }
-//        }, new BiFunction<Integer, Integer, String>() {
-//            @Override
-//            public String apply(@NonNull Integer integer, @NonNull Integer integer2) throws Exception {
-//                return integer + " - " + integer2;
-//            }
-//        }).subscribe(new Consumer<String>() {
-//            @Override
-//            public void accept(String s) throws Exception {
-//                System.out.println("onNext" + s);
-//            }
-//        });
-
-
     }
 
 
