@@ -1187,13 +1187,12 @@ public class ObservableTrial {
                 System.out.println("===subscribe===");
                 System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
 
-
                 for (int i = 0; i < 5; i++) {
                     emitter.onNext("sss-" + i);
                 }
+
+//                emitter.onError(new Throwable("xxx"));//如果有错误就发送
                 emitter.onComplete();
-
-
             }
         };
 
