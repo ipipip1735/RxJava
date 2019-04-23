@@ -23,7 +23,7 @@ public class ObservableTrial {
 
 
         /*================创建观察者========================*/
-//        observableTrial.create();
+        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
@@ -61,7 +61,7 @@ public class ObservableTrial {
 //        observableTrial.scan();
 //        observableTrial.zip();
 //        observableTrial.join();
-        observableTrial.merge();
+//        observableTrial.merge();
 
 
 
@@ -88,9 +88,45 @@ public class ObservableTrial {
 //        observableTrial.doOnLifecycle();
 //        observableTrial.doOnTerminate();
 
+
+
         /*==================连接函数=====================*/
 //        observableTrial.publish();
 
+
+
+
+        /*==================转换函数=====================*/
+//        observableTrial.to();//将被观察者转换为任意对象
+//        observableTrial.as();//同功能和to()类似
+
+
+
+
+
+    }
+
+    private void as() {
+        String info = Observable.just(1).as(new ObservableConverter<Integer, String>() {
+            @Override
+            public String apply(Observable<Integer> upstream) {
+                System.out.println("~~as.ObservableConverter.apply~~");
+                System.out.println("upstream is " + upstream);
+                return upstream.toString();
+            }
+        });
+        System.out.println("info is " + info);
+    }
+
+    private void to() {
+        String info = Observable.just(1).to(new Function<Observable<Integer>, String>() {
+            @Override
+            public String apply(Observable<Integer> integerObservable) throws Exception {
+                System.out.println("~~to.Function.apply~~");
+                return integerObservable.toString();
+            }
+        });
+        System.out.println("info is " + info);
     }
 
     private void publish() {
@@ -1114,7 +1150,7 @@ public class ObservableTrial {
     private void create() {
 
         //创建观察者
-        Observer observer = new Observer<Object>() {
+        Observer<String> observer = new Observer<>() {
             Disposable disposable = null;
 
             @Override
@@ -1126,9 +1162,9 @@ public class ObservableTrial {
             }
 
             @Override
-            public void onNext(Object o) {
+            public void onNext(String s) {
                 System.out.println("~~onNext~~");
-                System.out.println("o is " + o);
+                System.out.println("s is " + s);
             }
 
             @Override
@@ -1145,7 +1181,7 @@ public class ObservableTrial {
 
 
         //创建发射器
-        ObservableOnSubscribe observableOnSubscribe = new ObservableOnSubscribe<String>() {
+        ObservableOnSubscribe<String> observableOnSubscribe = new ObservableOnSubscribe<>() {
             @Override
             public void subscribe(ObservableEmitter<String> emitter) throws Exception {
                 System.out.println("===subscribe===");
@@ -1153,7 +1189,7 @@ public class ObservableTrial {
 
 
                 for (int i = 0; i < 5; i++) {
-                    emitter.onNext("oooo-" + i);
+                    emitter.onNext("sss-" + i);
                 }
                 emitter.onComplete();
 
