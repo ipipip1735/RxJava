@@ -1,6 +1,7 @@
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -17,13 +18,87 @@ public class SchedulerTrial {
         SchedulerTrial schedulerTrial = new SchedulerTrial();
 
 //        schedulerTrial.scheduler();
-        schedulerTrial.from();
+//        schedulerTrial.from();
+        schedulerTrial.from2();
 
 
 //        schedulerTrial.delay();
 //        schedulerTrial.interval();
 //        schedulerTrial.timer();
 //        schedulerTrial.sampler();
+
+
+    }
+
+    private void from2() {
+
+        Executor executor1 = new Executor() {
+            @Override
+            public void execute(Runnable command) {
+                System.out.println("~~execute1~~");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("~~run1.start~~");
+                        System.out.println(Thread.currentThread());
+                        command.run();
+                        System.out.println("~~run1.end~~");
+                    }
+                }, "mThread1").start();
+            }
+        };
+        Executor executor2 = new Executor() {
+            @Override
+            public void execute(Runnable command) {
+                System.out.println("~~execute2~~");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("~~run2.start~~");
+                        System.out.println(Thread.currentThread());
+                        command.run();
+                        System.out.println("~~run2.end~~");
+                    }
+                }, "mThread2").start();
+            }
+        };
+        Executor executor3 = new Executor() {
+            @Override
+            public void execute(Runnable command) {
+                System.out.println("~~execute3~~");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("~~run3.start~~");
+                        System.out.println(Thread.currentThread());
+                        command.run();
+                        System.out.println("~~run3.end~~");
+                    }
+                }, "mThread3").start();
+            }
+        };
+
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("~~create~~");
+                    System.out.println("create|" + Thread.currentThread());
+                emitter.onNext(1);
+                emitter.onNext(1);
+                emitter.onNext(1);
+            }
+        })
+                .subscribeOn(Schedulers.from(executor1))
+                .observeOn(Schedulers.from(executor2))
+                .map(integer -> {
+                    System.out.println("~~map~~");
+                    System.out.println("map|" + Thread.currentThread());
+                    return "one";
+                })
+                .subscribe(integer -> {
+                    System.out.println("~~subscribe~~");
+                    System.out.println("subscribe|" + Thread.currentThread());
+                });
 
 
     }
