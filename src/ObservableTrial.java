@@ -10,6 +10,7 @@ import io.reactivex.schedulers.Schedulers;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,7 +24,7 @@ public class ObservableTrial {
 
 
         /*================创建观察者========================*/
-        observableTrial.create();
+//        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
@@ -53,7 +54,7 @@ public class ObservableTrial {
 
 
         /*=============中间操作===========================*/
-//        observableTrial.map();
+        observableTrial.map();
 //        observableTrial.flatMap();
 //        observableTrial.buffer();
 //        observableTrial.groupBy();
@@ -99,9 +100,6 @@ public class ObservableTrial {
         /*==================转换函数=====================*/
 //        observableTrial.to();//将被观察者转换为任意对象
 //        observableTrial.as();//同功能和to()类似
-
-
-
 
 
     }
@@ -968,7 +966,7 @@ public class ObservableTrial {
         List<Observable<Integer>> list = Arrays.asList(Observable.just(72), Observable.just(173));
         Observable.just(12)
                 .merge(list)
-        .subscribe(System.out::println);
+                .subscribe(System.out::println);
     }
 
 
