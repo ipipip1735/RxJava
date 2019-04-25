@@ -24,7 +24,7 @@ public class ObservableTrial {
 
 
         /*================创建观察者========================*/
-//        observableTrial.create();
+        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
@@ -54,7 +54,7 @@ public class ObservableTrial {
 
 
         /*=============中间操作===========================*/
-        observableTrial.map();
+//        observableTrial.map();
 //        observableTrial.flatMap();
 //        observableTrial.buffer();
 //        observableTrial.groupBy();
@@ -128,39 +128,41 @@ public class ObservableTrial {
     }
 
     private void publish() {
-        ConnectableObservable<Integer> connectableObservable = Observable.create(new ObservableOnSubscribe<Integer>() {
-            @Override
-            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+        ConnectableObservable<Long> connectableObservable =
+                Observable.interval(1, TimeUnit.SECONDS)
+                        .publish();//转换为ConnectableObservable，即Hot Observable
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            for (int i = 0; i < 6; i++) {
-                                emitter.onNext(Integer.valueOf(i));
-                                Thread.sleep(1000L);
-                            }
-                            emitter.onComplete();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-            }
-        }).sample(1, TimeUnit.SECONDS).publish();
+        connectableObservable.subscribe(l -> System.out.println("one|" + l));//不会立即发送，等到connect()方法调用后发送
+        connectableObservable.connect();//开始发送
 
-        connectableObservable.subscribe(integer -> System.out.println("one|" + integer));//不会理解发送，等到connect()方法调用后发送
-        connectableObservable.subscribe(integer -> System.out.println("two|" + integer));
+        //睡2秒
+        try {
+            Thread.sleep(2000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-        connectableObservable.connect();//发送
+        //先订阅2个观察者
+        connectableObservable.subscribe(l -> System.out.println("two|" + l));
 
+        //再睡1秒
         try {
             Thread.sleep(1000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        connectableObservable.subscribe(integer -> System.out.println("three|" + integer));
 
+        //订阅第3个观察者，它将接收不完整的数据
+        connectableObservable.subscribe(l -> System.out.println("three|" + l));
+
+
+
+        //Observable.interval()使用守护进程，所以必须延迟主线程的结束时间
+        try {
+            Thread.sleep(6000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -1163,6 +1165,7 @@ public class ObservableTrial {
             public void onNext(String s) {
                 System.out.println("~~onNext~~");
                 System.out.println("s is " + s);
+                if(s.equals("aaa"))disposable.dispose();
             }
 
             @Override

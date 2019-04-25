@@ -1,8 +1,13 @@
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.FlowableOnSubscribe;
+import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+
+import java.util.concurrent.TimeUnit;
 
 import static io.reactivex.BackpressureStrategy.BUFFER;
 
@@ -12,8 +17,27 @@ import static io.reactivex.BackpressureStrategy.BUFFER;
 
 public class FlowableTrial {
     public static void main(String[] args) {
-        FlowableTrial flowableTrial = new FlowableTrial();
-        flowableTrial.create();
+//        FlowableTrial flowableTrial = new FlowableTrial();
+//        flowableTrial.create();
+
+
+        Observable.interval(1, TimeUnit.MILLISECONDS)
+                .observeOn(Schedulers.newThread())
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        Thread.sleep(1000L);
+                        System.out.println(aLong);
+                    }
+                });
+
+        try {
+            Thread.sleep(90000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private void create() {

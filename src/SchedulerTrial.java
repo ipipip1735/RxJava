@@ -2,6 +2,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Scheduler;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -18,9 +19,8 @@ public class SchedulerTrial {
         SchedulerTrial schedulerTrial = new SchedulerTrial();
 
 //        schedulerTrial.scheduler();
-//        schedulerTrial.from();
-        schedulerTrial.from2();
 
+//        schedulerTrial.from();
 
 //        schedulerTrial.delay();
 //        schedulerTrial.interval();
@@ -30,8 +30,9 @@ public class SchedulerTrial {
 
     }
 
-    private void from2() {
+    private void from() {
 
+        //创建三个执行器
         Executor executor1 = new Executor() {
             @Override
             public void execute(Runnable command) {
@@ -82,110 +83,23 @@ public class SchedulerTrial {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
                 System.out.println("~~create~~");
-                    System.out.println("create|" + Thread.currentThread());
+                System.out.println("create|" + Thread.currentThread());
                 emitter.onNext(1);
-                emitter.onNext(1);
-                emitter.onNext(1);
+                emitter.onNext(2);
+                emitter.onNext(3);
             }
-        })
-                .subscribeOn(Schedulers.from(executor1))
+        }).subscribeOn(Schedulers.from(executor1))
                 .observeOn(Schedulers.from(executor2))
                 .map(integer -> {
                     System.out.println("~~map~~");
                     System.out.println("map|" + Thread.currentThread());
                     return "one";
                 })
+                .observeOn(Schedulers.from(executor3))
                 .subscribe(integer -> {
                     System.out.println("~~subscribe~~");
                     System.out.println("subscribe|" + Thread.currentThread());
                 });
-
-
-    }
-
-    private void from() {
-
-
-        Executor executor1 = new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                System.out.println("~~execute1~~");
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        System.out.println("~~run1.start~~");
-                        System.out.println(Thread.currentThread());
-                        command.run();
-                        System.out.println("~~run1.end~~");
-                    }
-                }, "mThread1").start();
-            }
-        };
-        Executor executor2 = new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                System.out.println("~~execute2~~");
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        System.out.println("~~run2.start~~");
-                        System.out.println(Thread.currentThread());
-                        command.run();
-                        System.out.println("~~run2.end~~");
-                    }
-                }, "mThread2").start();
-            }
-        };
-
-        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
-            @Override
-            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                System.out.println("~~create.ObservableOnSubscribe.subscribe~~");
-                System.out.println(Thread.currentThread());
-                emitter.onNext(1);
-                emitter.onNext(2);
-                emitter.onNext(3);
-                emitter.onComplete();
-            }
-        })
-                .subscribeOn(Schedulers.from(executor1))
-                .map(new Function<Integer, String>() { //将Integer映射为String
-                    @Override
-                    public String apply(Integer integer) throws Exception {
-                        System.out.println("~~map1.Function.apply~~");
-                        System.out.println(Thread.currentThread());
-                        System.out.println("integer is " + integer);
-                        Thread.sleep(2000L);
-                        return integer.toString() + "--";
-                    }
-                })
-                .subscribeOn(Schedulers.from(executor2))
-                .map(new Function<String, Integer>() { //将Integer映射为String
-                    @Override
-                    public Integer apply(String s) throws Exception {
-                        System.out.println("~~map2.Function.apply~~");
-                        System.out.println(Thread.currentThread());
-                        Thread.sleep(2000L);
-                        System.out.println("integer is " + s);
-                        return Integer.valueOf(1);
-                    }
-                });
-        //.subscribeOn(Schedulers.io());
-//                .observeOn(Schedulers.computation());
-        observable.subscribe(new Consumer<Integer>() {
-            @Override
-            public void accept(Integer s) throws Exception {
-                System.out.println("~~subscribe.Consumer.accept~~");
-                System.out.println(Thread.currentThread());
-            }
-        });
-
-
-        try {
-            Thread.sleep(30000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
 
