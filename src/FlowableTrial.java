@@ -1,7 +1,4 @@
-import io.reactivex.Flowable;
-import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableOnSubscribe;
-import io.reactivex.Observable;
+import io.reactivex.*;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import org.reactivestreams.Subscriber;
@@ -9,7 +6,7 @@ import org.reactivestreams.Subscription;
 
 import java.util.concurrent.TimeUnit;
 
-import static io.reactivex.BackpressureStrategy.BUFFER;
+import static io.reactivex.BackpressureStrategy.*;
 
 /**
  * Created by Administrator on 2019/4/18.
@@ -17,48 +14,43 @@ import static io.reactivex.BackpressureStrategy.BUFFER;
 
 public class FlowableTrial {
     public static void main(String[] args) {
-//        FlowableTrial flowableTrial = new FlowableTrial();
-//        flowableTrial.create();
-
-
-        Observable.interval(1, TimeUnit.MILLISECONDS)
-                .observeOn(Schedulers.newThread())
-                .subscribe(new Consumer<Long>() {
-                    @Override
-                    public void accept(Long aLong) throws Exception {
-                        Thread.sleep(1000L);
-                        System.out.println(aLong);
-                    }
-                });
-
-        try {
-            Thread.sleep(90000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
+        FlowableTrial flowableTrial = new FlowableTrial();
+        flowableTrial.create();
     }
 
     private void create() {
 
+//        System.setProperty("rx2.buffer-size", "2");
+//        System.out.println("Flowable.bufferSize() is " + Flowable.bufferSize());
 
+
+        //订阅器
         Subscriber<Integer> subscriber = new Subscriber<>() {
             Subscription s = null;
+            private long begin = System.currentTimeMillis();
 
             @Override
             public void onSubscribe(Subscription s) {
                 System.out.println("~~onSubscribe~~");
                 System.out.println("Subscription is " + s.hashCode() + "|" + s);
                 this.s = s;
-                s.request(10);
+                s.request(1);
             }
 
             @Override
             public void onNext(Integer i) {
                 System.out.println("~~onNext~~");
                 System.out.println("integer is " + i);
-//                s.request(1);
+
+                if (System.currentTimeMillis() - begin < 3000) {
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                s.request(1);
             }
 
             @Override
@@ -73,25 +65,31 @@ public class FlowableTrial {
             }
         };
 
-
-        Flowable<Integer> flowable = Flowable.create(new FlowableOnSubscribe<Integer>() {
+        //发送器
+        FlowableOnSubscribe<Integer> flowableOnSubscribe = new FlowableOnSubscribe<>() {
             @Override
             public void subscribe(FlowableEmitter<Integer> emitter) throws Exception {
                 System.out.println("~~create.subscribe~~");
-                for (int i = 0; i < 5; i++) {
+
+                long begin = System.currentTimeMillis();
+                for (int i = 0; i<500; ++i) {
                     emitter.onNext(i);
                 }
-                emitter.onComplete();
             }
-        }, BUFFER);
+        };
 
-        flowable.subscribe(subscriber);
-
+//        Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, ERROR);
+//        Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, MISSING);
+        //Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, DROP);
+        Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, LATEST);
+//        Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, BUFFER);
+        flowable.observeOn(Schedulers.newThread()).subscribe(subscriber);
 
         try {
-            Thread.sleep(3000L);
+            Thread.sleep(6500L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
     }
 }
