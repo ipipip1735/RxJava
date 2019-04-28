@@ -2,9 +2,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Scheduler;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 import java.util.concurrent.Executor;
@@ -18,10 +16,14 @@ public class SchedulerTrial {
     public static void main(String[] args) {
         SchedulerTrial schedulerTrial = new SchedulerTrial();
 
-//        schedulerTrial.scheduler();
 
+        /*---显式调用---*/
+        schedulerTrial.schedulerFrom();
+//        schedulerTrial.schedulerIO();
+
+
+        /*---隐式调用---*/
 //        schedulerTrial.from();
-
 //        schedulerTrial.delay();
 //        schedulerTrial.interval();
 //        schedulerTrial.timer();
@@ -30,7 +32,33 @@ public class SchedulerTrial {
 
     }
 
-    private void from() {
+    private void schedulerIO() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                emitter.onNext(1);
+                emitter.onNext(2);
+                emitter.onNext(3);
+                emitter.onComplete();
+            }
+        }).observeOn(Schedulers.io())
+                .map(integer -> {
+                    System.out.println("map|" + Thread.currentThread());
+                    return String.valueOf(integer);
+                })
+//                .observeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+//                .observeOn(Schedulers.trampoline())
+                .subscribe(s -> System.out.println("subscribe|" + Thread.currentThread()));
+
+        try {
+            Thread.sleep(5000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void schedulerFrom() {
 
         //创建三个执行器
         Executor executor1 = new Executor() {
@@ -88,14 +116,14 @@ public class SchedulerTrial {
                 emitter.onNext(2);
                 emitter.onNext(3);
             }
-        }).subscribeOn(Schedulers.from(executor1))
-                .observeOn(Schedulers.from(executor2))
+        }).subscribeOn(Schedulers.from(executor1)) //顺序不限制
+                .observeOn(Schedulers.from(executor2)) //指定下游顺序
                 .map(integer -> {
                     System.out.println("~~map~~");
                     System.out.println("map|" + Thread.currentThread());
                     return "one";
                 })
-                .observeOn(Schedulers.from(executor3))
+                .observeOn(Schedulers.from(executor3)) //指定下游顺序
                 .subscribe(integer -> {
                     System.out.println("~~subscribe~~");
                     System.out.println("subscribe|" + Thread.currentThread());
@@ -177,70 +205,70 @@ public class SchedulerTrial {
     private void scheduler() {
 
         //方式一：使用内置守护线程
-//        Observable<String> observable = Observable.create(new ObservableOnSubscribe<String>() {
-//            @Override
-//            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
-//                emitter.onNext("aaa");
-//                emitter.onNext("bbb");
-//                System.out.println("ssss");
-//                emitter.onNext("ccc");
-//                emitter.onNext("dddd");
-//                emitter.onComplete();
-//                System.out.println(Thread.currentThread());
-//            }
-//        }).subscribeOn(Schedulers.io()); //使用调度器创建的守护线程
-//
-//        observable.observeOn(Schedulers.io()) //使用调度器创建的守护线程
-//        .subscribe(new Consumer<String>() {
-//            @Override
-//            public void accept(String s) throws Exception {
-//                System.out.println(s);
-//                System.out.println(Thread.currentThread());
-//            }
-//        });
-//
-//        try {
-//            Thread.sleep(3000L);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-
-        //方式二：自定义线程
         Observable<String> observable = Observable.create(new ObservableOnSubscribe<String>() {
             @Override
             public void subscribe(ObservableEmitter<String> emitter) throws Exception {
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            emitter.onNext("aaa");
-                            emitter.onNext("bbb");
-                            Thread.sleep(1000L);
-                            System.out.println("ssss");
-                            emitter.onNext("ccc");
-                            emitter.onNext("dddd");
-                            emitter.onComplete();
-                            System.out.println(Thread.currentThread());
-
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
+                emitter.onNext("aaa");
+                emitter.onNext("bbb");
+                System.out.println("ssss");
+                emitter.onNext("ccc");
+                emitter.onNext("dddd");
+                emitter.onComplete();
+                System.out.println(Thread.currentThread());
             }
-        });
+        }).subscribeOn(Schedulers.io()); //使用调度器创建的守护线程
 
-        observable.observeOn(Schedulers.io())//使用调度器创建的守护线程
+        observable.observeOn(Schedulers.io()) //使用调度器创建的守护线程
                 .subscribe(new Consumer<String>() {
                     @Override
                     public void accept(String s) throws Exception {
                         System.out.println(s);
                         System.out.println(Thread.currentThread());
-
                     }
                 });
+
+        try {
+            Thread.sleep(3000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+        //方式二：自定义线程
+//        Observable<String> observable = Observable.create(new ObservableOnSubscribe<String>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+//
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        try {
+//                            emitter.onNext("aaa");
+//                            emitter.onNext("bbb");
+//                            Thread.sleep(1000L);
+//                            System.out.println("ssss");
+//                            emitter.onNext("ccc");
+//                            emitter.onNext("dddd");
+//                            emitter.onComplete();
+//                            System.out.println(Thread.currentThread());
+//
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }).start();
+//            }
+//        });
+//
+//        observable.observeOn(Schedulers.io())//使用调度器创建的守护线程
+//                .subscribe(new Consumer<String>() {
+//                    @Override
+//                    public void accept(String s) throws Exception {
+//                        System.out.println(s);
+//                        System.out.println(Thread.currentThread());
+//
+//                    }
+//                });
 
     }
 

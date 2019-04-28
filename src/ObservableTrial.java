@@ -24,7 +24,7 @@ public class ObservableTrial {
 
 
         /*================创建观察者========================*/
-        observableTrial.create();
+//        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
@@ -102,6 +102,17 @@ public class ObservableTrial {
 //        observableTrial.as();//同功能和to()类似
 
 
+        Disposable disposable = Observable.interval(1, TimeUnit.SECONDS)
+                .subscribe(System.out::println);
+
+        try {
+            Thread.sleep(3000L);
+            disposable.dispose();
+            Thread.sleep(6000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void as() {
@@ -154,7 +165,6 @@ public class ObservableTrial {
 
         //订阅第3个观察者，它将接收不完整的数据
         connectableObservable.subscribe(l -> System.out.println("three|" + l));
-
 
 
         //Observable.interval()使用守护进程，所以必须延迟主线程的结束时间
@@ -1150,7 +1160,7 @@ public class ObservableTrial {
     private void create() {
 
         //创建观察者
-        Observer<String> observer = new Observer<>() {
+        Observer<Integer> observer = new Observer<>() {
             Disposable disposable = null;
 
             @Override
@@ -1162,10 +1172,10 @@ public class ObservableTrial {
             }
 
             @Override
-            public void onNext(String s) {
+            public void onNext(Integer integer) {
                 System.out.println("~~onNext~~");
-                System.out.println("s is " + s);
-                if(s.equals("aaa"))disposable.dispose();
+                System.out.println("s is " + integer);
+                if (integer > 2) disposable.dispose();
             }
 
             @Override
@@ -1182,14 +1192,14 @@ public class ObservableTrial {
 
 
         //创建发射器
-        ObservableOnSubscribe<String> observableOnSubscribe = new ObservableOnSubscribe<>() {
+        ObservableOnSubscribe<Integer> observableOnSubscribe = new ObservableOnSubscribe<>() {
             @Override
-            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
                 System.out.println("===subscribe===");
                 System.out.println("emitter is " + emitter.hashCode() + "|" + emitter);
 
                 for (int i = 0; i < 5; i++) {
-                    emitter.onNext("sss-" + i);
+                    emitter.onNext(i);
                 }
 
 //                emitter.onError(new Throwable("xxx"));//如果有错误就发送
@@ -1198,7 +1208,7 @@ public class ObservableTrial {
         };
 
         //创建被观察者
-        Observable<String> observable = Observable.create(observableOnSubscribe);
+        Observable<Integer> observable = Observable.create(observableOnSubscribe);
         observable.subscribe(observer); //注册观察者
     }
 
