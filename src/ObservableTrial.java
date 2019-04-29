@@ -28,8 +28,6 @@ public class ObservableTrial {
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
-//        observableTrial.repeat();
-//        observableTrial.emptyNeverError();
         /*-------异步创建----------*/
 //        observableTrial.timer(); //定时发送一次
 //        observableTrial.interval(); //间隔发送
@@ -38,6 +36,8 @@ public class ObservableTrial {
         /*-------其他创建----------*/
 //        observableTrial.defer(); //延迟到订阅时创建被观察者
 //        observableTrial.using();//发送完成后销毁资源
+//        observableTrial.emptyNeverError();
+
 
         /*=================过滤函数=======================*/
 //        observableTrial.distinct();
@@ -54,6 +54,7 @@ public class ObservableTrial {
 
 
         /*=============中间操作===========================*/
+//        observableTrial.repeat();
 //        observableTrial.map();
 //        observableTrial.flatMap();
 //        observableTrial.buffer();
@@ -61,7 +62,7 @@ public class ObservableTrial {
 //        observableTrial.window();
 //        observableTrial.scan();
 //        observableTrial.zip();
-//        observableTrial.join();
+        observableTrial.join();
 //        observableTrial.merge();
 
 
@@ -100,18 +101,6 @@ public class ObservableTrial {
         /*==================转换函数=====================*/
 //        observableTrial.to();//将被观察者转换为任意对象
 //        observableTrial.as();//同功能和to()类似
-
-
-        Disposable disposable = Observable.interval(1, TimeUnit.SECONDS)
-                .subscribe(System.out::println);
-
-        try {
-            Thread.sleep(3000L);
-            disposable.dispose();
-            Thread.sleep(6000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -848,7 +837,7 @@ public class ObservableTrial {
     private void buffer() {
         Observable<List<Integer>> observable = Observable.range(0, 12)
                 .buffer(4, 1);//步长为一
-//                .buffer(4, 4);
+//         .buffer(4, 3);
 
         observable.subscribe(System.out::println);
 
@@ -919,13 +908,13 @@ public class ObservableTrial {
         };
 
         //使用empty
-//        Observable.empty()//仅发送onSubscribe和onComplete事件，不发送任何onNext
-//                .subscribe(observer);
+        Observable.empty()//仅发送onSubscribe和onComplete事件，不发送任何onNext
+                .subscribe(observer);
 
 
         //使用never
-//        Observable.never()//仅发送onSubscribe，没有其他任何事件
-//                .subscribe(observer);
+        Observable.never()//仅发送onSubscribe，没有其他任何事件
+                .subscribe(observer);
 
         //使用error
         Observable.error(new Throwable())//仅发送onSubscribe和onError事件，不发送任何onNext
@@ -1022,11 +1011,30 @@ public class ObservableTrial {
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
                 System.out.println("-->>origin.create.subscribe<<--");
                 System.out.println("emitter is " + emitter);
-                emitter.onNext(17);
-                Thread.sleep(1000L);
-                emitter.onNext(27);
-                emitter.onNext(37);
-                emitter.onComplete();
+
+//                emitter.onNext(17);
+//                emitter.onNext(27);
+//                emitter.onNext(37);
+
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000L);
+                            emitter.onNext(17);
+                            Thread.sleep(1000L);
+                            emitter.onNext(27);
+                            Thread.sleep(1000L);
+                            emitter.onNext(37);
+//                emitter.onComplete();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+
+
             }
         });
 
@@ -1036,9 +1044,11 @@ public class ObservableTrial {
                 System.out.println("-->>other.create.subscribe<<--");
                 System.out.println("emitter is " + emitter);
 //                Thread.sleep(1100L);
-                emitter.onNext(81);//                emitter.onNext(82);
+                emitter.onNext(81);
+                emitter.onNext(82);
+                emitter.onNext(83);
 //                emitter.onNext(83);
-                emitter.onComplete();
+//                emitter.onComplete();
             }
         });
 
@@ -1047,17 +1057,14 @@ public class ObservableTrial {
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~leftEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
-                return Observable.create(new ObservableOnSubscribe<Integer>() {
-                    @Override
-                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                        if (integer.equals(27)) {
-                            emitter.onNext(9527);
-//                            emitter.onNext(414);//按索引清除的，多个onNext是无效的
-//                            emitter.onNext(-56);
-//                            emitter.onNext(44);
-                        }
-                    }
-                });
+                return Observable.never();
+//                return Observable.create(new ObservableOnSubscribe<Integer>() {
+//                    @Override
+//                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+//                        Thread.sleep(2500L);
+//                        emitter.onNext(0);
+//                    }
+//                });
             }
         };
         Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
@@ -1065,10 +1072,27 @@ public class ObservableTrial {
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~rightEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
-                return Observable.never();
-//                        .delay(3, TimeUnit.SECONDS);
+//                return Observable.never();
+                return Observable.create(new ObservableOnSubscribe<Integer>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    Thread.sleep(1500L);
+                                    if (integer.equals(81))
+                                        emitter.onNext(0);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).start();
+                    }
+                });
             }
         };
+
         BiFunction<Integer, Integer, Integer> resultSelector = new BiFunction<Integer, Integer, Integer>() {
             @Override
             public Integer apply(Integer integer, Integer integer2) throws Exception {
@@ -1081,20 +1105,20 @@ public class ObservableTrial {
 
 
         //方式一：同步join
-//        origin.join(other,
-//                leftEnd,
-//                rightEnd,
-//                resultSelector)
-//                .subscribe(observer);
-
-        //方式二：异步join
-        origin = origin.subscribeOn(Schedulers.io());
-        other = other.subscribeOn(Schedulers.io());
         origin.join(other,
                 leftEnd,
                 rightEnd,
                 resultSelector)
                 .subscribe(observer);
+
+        //方式二：异步join
+//        origin = origin.subscribeOn(Schedulers.io());
+//        other = other.subscribeOn(Schedulers.io());
+//        origin.join(other,
+//                leftEnd,
+//                rightEnd,
+//                resultSelector)
+//                .subscribe(observer);
 
         try {
             Thread.sleep(5000L);
