@@ -20,6 +20,7 @@ public class SchedulerTrial {
         /*---显式调用---*/
         schedulerTrial.schedulerFrom();
 //        schedulerTrial.schedulerIO();
+//        schedulerTrial.scheduler();
 
 
         /*---隐式调用---*/
@@ -131,77 +132,6 @@ public class SchedulerTrial {
     }
 
 
-    private void sampler() {
-
-        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
-            @Override
-            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-
-                            emitter.onNext(1);
-                            emitter.onNext(2);
-                            Thread.sleep(200L);
-                            emitter.onNext(3);
-                            Thread.sleep(200L);
-                            emitter.onNext(4);//发送，因为后面要停800毫秒，加前面的400毫秒，已经超过1秒了
-                            Thread.sleep(800L);
-                            emitter.onNext(5);
-                            emitter.onNext(6);
-                            emitter.onNext(7);
-                            emitter.onNext(8);
-                            emitter.onComplete();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-            }
-        }).sample(1, TimeUnit.SECONDS);//每秒采样一次
-        observable.subscribe(System.out::println);
-    }
-
-    private void timer() {
-        Observable<Long> observable = Observable.timer(1000L, TimeUnit.MILLISECONDS)
-                .subscribeOn(Schedulers.io());
-        observable.subscribe(new Consumer<Long>() {
-            @Override
-            public void accept(Long aLong) throws Exception {
-                System.out.println(Thread.currentThread());
-                System.out.println("aLong is " + aLong);
-            }
-        });
-
-        try {
-            Thread.sleep(30000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void interval() {
-
-        Observable<Long> observable = Observable.interval(1000L, TimeUnit.MILLISECONDS)
-                .subscribeOn(Schedulers.io());
-        observable.subscribe(new Consumer<Long>() {
-            @Override
-            public void accept(Long aLong) throws Exception {
-                System.out.println(Thread.currentThread());
-                System.out.println("aLong is " + aLong);
-            }
-        });
-
-        try {
-            Thread.sleep(3000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-
     private void scheduler() {
 
         //方式一：使用内置守护线程
@@ -270,6 +200,77 @@ public class SchedulerTrial {
 //                    }
 //                });
 
+    }
+
+
+    private void sampler() {
+
+        Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+
+                            emitter.onNext(1);
+                            emitter.onNext(2);
+                            Thread.sleep(200L);
+                            emitter.onNext(3);
+                            Thread.sleep(200L);
+                            emitter.onNext(4);//发送，因为后面要停800毫秒，加前面的400毫秒，已经超过1秒了
+                            Thread.sleep(800L);
+                            emitter.onNext(5);
+                            emitter.onNext(6);
+                            emitter.onNext(7);
+                            emitter.onNext(8);
+                            emitter.onComplete();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        }).sample(1, TimeUnit.SECONDS);//每秒采样一次
+        observable.subscribe(System.out::println);
+    }
+
+    private void timer() {
+        Observable<Long> observable = Observable.timer(1000L, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io());
+        observable.subscribe(new Consumer<Long>() {
+            @Override
+            public void accept(Long aLong) throws Exception {
+                System.out.println(Thread.currentThread());
+                System.out.println("aLong is " + aLong);
+            }
+        });
+
+        try {
+            Thread.sleep(30000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void interval() {
+
+        Observable<Long> observable = Observable.interval(1000L, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io());
+        observable.subscribe(new Consumer<Long>() {
+            @Override
+            public void accept(Long aLong) throws Exception {
+                System.out.println(Thread.currentThread());
+                System.out.println("aLong is " + aLong);
+            }
+        });
+
+        try {
+            Thread.sleep(3000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void delay() {
