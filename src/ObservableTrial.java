@@ -1,7 +1,6 @@
 import io.reactivex.*;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.*;
 import io.reactivex.observables.ConnectableObservable;
@@ -10,8 +9,8 @@ import io.reactivex.schedulers.Schedulers;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by Administrator on 2019/4/17.
@@ -54,7 +53,9 @@ public class ObservableTrial {
 
 
         /*=============中间操作===========================*/
+        observableTrial.cache();
 //        observableTrial.repeat();
+        /*-----------------*/
 //        observableTrial.map();
 //        observableTrial.flatMap();
 //        observableTrial.buffer();
@@ -62,7 +63,7 @@ public class ObservableTrial {
 //        observableTrial.window();
 //        observableTrial.scan();
 //        observableTrial.zip();
-        observableTrial.join();
+//        observableTrial.join();
 //        observableTrial.merge();
 
 
@@ -92,10 +93,6 @@ public class ObservableTrial {
 
 
 
-        /*==================连接函数=====================*/
-//        observableTrial.publish();
-
-
 
 
         /*==================转换函数=====================*/
@@ -103,6 +100,7 @@ public class ObservableTrial {
 //        observableTrial.as();//同功能和to()类似
 
     }
+
 
     private void as() {
         String info = Observable.just(1).as(new ObservableConverter<Integer, String>() {
@@ -127,43 +125,6 @@ public class ObservableTrial {
         System.out.println("info is " + info);
     }
 
-    private void publish() {
-        ConnectableObservable<Long> connectableObservable =
-                Observable.interval(1, TimeUnit.SECONDS)
-                        .publish();//转换为ConnectableObservable，即Hot Observable
-
-        connectableObservable.subscribe(l -> System.out.println("one|" + l));//不会立即发送，等到connect()方法调用后发送
-        connectableObservable.connect();//开始发送
-
-        //睡2秒
-        try {
-            Thread.sleep(2000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        //先订阅2个观察者
-        connectableObservable.subscribe(l -> System.out.println("two|" + l));
-
-        //再睡1秒
-        try {
-            Thread.sleep(1000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        //订阅第3个观察者，它将接收不完整的数据
-        connectableObservable.subscribe(l -> System.out.println("three|" + l));
-
-
-        //Observable.interval()使用守护进程，所以必须延迟主线程的结束时间
-        try {
-            Thread.sleep(6000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-    }
 
     private void delay() {
         //方法一
@@ -353,7 +314,6 @@ public class ObservableTrial {
                     @Override
                     public void run() {
                         try {
-
                             emitter.onNext(1);
                             emitter.onNext(2);
                             Thread.sleep(2000L);//间隔大于1秒，所以2可以发送
@@ -949,6 +909,49 @@ public class ObservableTrial {
     }
 
 
+    private void cache() {
+//        Observable<Integer> observable = Observable.fromArray(11, 22, 33)
+//                .cache();//缓存
+//
+//
+//        Observable<Integer> observable1 = observable.take(2);
+//
+//
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    Thread.sleep(3000L);
+//                    observable1.subscribe(integer -> System.out.println("one|integer is " + integer)); //重播
+//
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
+//
+//        observable.subscribe(integer -> System.out.println("two|integer is " + integer));
+
+
+
+        AtomicBoolean shouldStop = new AtomicBoolean();
+
+        Observable<Boolean> observable = Observable
+                .takeUntil(v -> shouldStop.get())
+                .cache()
+                .takeUntil(v -> shouldStop.get())
+                .subscribe(...);
+
+
+
+
+
+
+
+
+    }
+
+
     private void repeat() {
         Observable.fromArray(1, 3, 5)
                 .repeat(2)
@@ -964,14 +967,346 @@ public class ObservableTrial {
 
     private void merge() {
 
-        List<Observable<Integer>> list = Arrays.asList(Observable.just(72), Observable.just(173));
-        Observable.just(12)
-                .merge(list)
+        List<Observable<Integer>> list = Arrays.asList(Observable.fromArray(72, 73), Observable.just(81));
+        Observable.merge(list)
                 .subscribe(System.out::println);
     }
 
 
     private void join() {
+
+//        joinSync();//同步join
+//        joinAsync();//同步join
+//        joinDefer();//使用定时器
+//        joinTime();//使用定时器
+
+    }
+
+    private void joinTime() {
+        //创建观察者
+        Observer observer = new Observer<Integer>() {
+            Disposable disposable = null;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                System.out.println("~~onSubscribe~~");
+                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+
+                disposable = d;
+            }
+
+            @Override
+            public void onNext(Integer o) {
+                System.out.println("~~onNext~~");
+                System.out.println("o is " + o);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("~~onError~~");
+                System.out.println("error is " + e);
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("~~onComplete~~");
+            }
+        };
+
+
+        //待连接者
+        Observable<Integer> origin = Observable.interval(1, TimeUnit.SECONDS)
+                .map(Long::intValue);
+        Observable<Integer> other = Observable.fromArray(1, 2);
+
+
+        //左定时器
+        Function<Integer, Observable<Integer>> leftEnd = new Function<Integer, Observable<Integer>>() {
+            @Override
+            public Observable<Integer> apply(Integer integer) throws Exception {
+                return Observable.timer(1, TimeUnit.SECONDS)//使用定时器
+                        .map(Long::intValue);//将Long转化为Integer
+            }
+        };
+
+        //右定时器
+        Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
+            @Override
+            public Observable<Integer> apply(Integer integer) throws Exception {
+                System.out.println("~~rightEnd.Function.apply~~");
+                System.out.println("integer is " + integer);
+                return Observable.never();
+            }
+        };
+
+        //连接器
+        BiFunction<Integer, Integer, Integer> resultSelector = new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                System.out.println("----resultSelector.BiFunction.apply----");
+                System.out.println("integer is " + integer);
+                System.out.println("integer2 is " + integer2);
+                return integer + integer2;
+            }
+        };
+
+
+        origin.join(other,
+                leftEnd,//左buffer定时器
+                rightEnd,//右buffer定时器
+                resultSelector)
+                .subscribe(observer);
+
+
+        try {
+            Thread.sleep(6000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    private void joinDefer() {
+        //创建观察者
+        Observer observer = new Observer<Integer>() {
+            Disposable disposable = null;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                System.out.println("~~onSubscribe~~");
+                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+
+                disposable = d;
+            }
+
+            @Override
+            public void onNext(Integer o) {
+                System.out.println("~~onNext~~");
+                System.out.println("o is " + o);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("~~onError~~");
+                System.out.println("error is " + e);
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("~~onComplete~~");
+            }
+        };
+
+        //待连接者
+        Observable<Integer> origin = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("-->>origin.create.subscribe<<--");
+                System.out.println("emitter is " + emitter);
+                emitter.onNext(17);
+                emitter.onNext(27);
+                emitter.onNext(37);
+            }
+        });
+
+        //被连接者
+        Observable<Integer> other = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("-->>other.create.subscribe<<--");
+                System.out.println("emitter is " + emitter);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            emitter.onNext(81);
+                            Thread.sleep(1000L);
+                            emitter.onNext(82);
+                            Thread.sleep(1000L);
+                            emitter.onNext(83);
+
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
+
+        //左定时器
+        Function<Integer, Observable<Integer>> leftEnd = new Function<Integer, Observable<Integer>>() {
+            @Override
+            public Observable<Integer> apply(Integer integer) throws Exception {
+                System.out.println("~~leftEnd.Function.apply~~");
+                System.out.println("integer is " + integer);
+                return Observable.create(new ObservableOnSubscribe<Integer>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    if (integer.equals(17))
+                                        Thread.sleep(1000L);//设置定时器，17的生存时间
+                                    if (integer.equals(27))
+                                        Thread.sleep(2000L);//设置定时器，27的生存时间
+                                    if (integer.equals(37))
+                                        Thread.sleep(2500L);//设置定时器，37的生存时间
+
+
+                                    emitter.onNext(0); //后面的onNext是无效的，onNext发送的数据也没有意义
+//                                    emitter.onNext(new Random().nextInt(9999));
+//                                    emitter.onNext(new Random().nextInt());
+
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).start();
+                    }
+                });
+            }
+        };
+
+        //右定时器
+        Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
+            @Override
+            public Observable<Integer> apply(Integer integer) throws Exception {
+                System.out.println("~~rightEnd.Function.apply~~");
+                System.out.println("integer is " + integer);
+                return Observable.never();
+            }
+        };
+
+        //连接器
+        BiFunction<Integer, Integer, Integer> resultSelector = new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                System.out.println("----resultSelector.BiFunction.apply----");
+                System.out.println("integer is " + integer);
+                System.out.println("integer2 is " + integer2);
+                return integer + integer2;
+            }
+        };
+
+        origin.join(other,
+                leftEnd,//左buffer定时器
+                rightEnd,//右buffer定时器
+                resultSelector)
+                .subscribe(observer);
+    }
+
+    private void joinAsync() {
+
+        //创建观察者
+        Observer observer = new Observer<Integer>() {
+            Disposable disposable = null;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                System.out.println("~~onSubscribe~~");
+                System.out.println("Disposable is " + d.hashCode() + "|" + d);
+
+                disposable = d;
+            }
+
+            @Override
+            public void onNext(Integer o) {
+                System.out.println("~~onNext~~");
+                System.out.println("o is " + o);
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("~~onError~~");
+                System.out.println("error is " + e);
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("~~onComplete~~");
+
+            }
+        };
+
+        //待连接者
+        Observable<Integer> origin = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("-->>origin.create.subscribe<<--");
+                System.out.println("emitter is " + emitter);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(3000L);
+                            emitter.onNext(17);
+                            emitter.onNext(27);
+                            emitter.onNext(37);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
+
+        //被连接者
+        Observable<Integer> other = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                System.out.println("-->>other.create.subscribe<<--");
+                System.out.println("emitter is " + emitter);
+                emitter.onNext(81);
+                emitter.onNext(82);
+                emitter.onNext(83);
+            }
+        });
+
+        //左定时器
+        Function<Integer, Observable<Integer>> leftEnd = new Function<Integer, Observable<Integer>>() {
+            @Override
+            public Observable<Integer> apply(Integer integer) throws Exception {
+                System.out.println("~~leftEnd.Function.apply~~");
+                System.out.println("integer is " + integer);
+                return Observable.never();
+            }
+        };
+
+        //右定时器
+        Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
+            @Override
+            public Observable<Integer> apply(Integer integer) throws Exception {
+                System.out.println("~~rightEnd.Function.apply~~");
+                System.out.println("integer is " + integer);
+                return Observable.never();
+            }
+        };
+
+        //连接器
+        BiFunction<Integer, Integer, Integer> resultSelector = new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                System.out.println("----resultSelector.BiFunction.apply----");
+                System.out.println("integer is " + integer);
+                System.out.println("integer2 is " + integer2);
+                return integer + integer2;
+            }
+        };
+
+        origin.join(other,
+                leftEnd,//左buffer定时器
+                rightEnd,//右buffer定时器
+                resultSelector)
+                .subscribe(observer);
+
+    }
+
+    private void joinSync() {
 
         //创建观察者
         Observer observer = new Observer<Integer>() {
@@ -1006,37 +1341,19 @@ public class ObservableTrial {
         };
 
 
+        //待连接者
         Observable<Integer> origin = Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
                 System.out.println("-->>origin.create.subscribe<<--");
                 System.out.println("emitter is " + emitter);
-
-//                emitter.onNext(17);
-//                emitter.onNext(27);
-//                emitter.onNext(37);
-
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(1000L);
-                            emitter.onNext(17);
-                            Thread.sleep(1000L);
-                            emitter.onNext(27);
-                            Thread.sleep(1000L);
-                            emitter.onNext(37);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-
-
+                emitter.onNext(17);
+                emitter.onNext(27);
+                emitter.onNext(37);
             }
         });
 
+        //被连接者
         Observable<Integer> other = Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
@@ -1044,56 +1361,26 @@ public class ObservableTrial {
                 System.out.println("emitter is " + emitter);
                 emitter.onNext(81);
                 emitter.onNext(82);
-//                emitter.onNext(83);
             }
         });
 
+        //左定时器
         Function<Integer, Observable<Integer>> leftEnd = new Function<Integer, Observable<Integer>>() {
             @Override
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~leftEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
                 return Observable.never();
-//                return Observable.create(new ObservableOnSubscribe<Integer>() {
-//                    @Override
-//                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-//                        Thread.sleep(2500L);
-//                        emitter.onNext(0);
-//                    }
-//                });
             }
         };
+
+        //右定时器
         Function<Integer, Observable<Integer>> rightEnd = new Function<Integer, Observable<Integer>>() {
             @Override
             public Observable<Integer> apply(Integer integer) throws Exception {
                 System.out.println("~~rightEnd.Function.apply~~");
                 System.out.println("integer is " + integer);
-//                return Observable.never();
-                return Observable.create(new ObservableOnSubscribe<Integer>() {
-                    @Override
-                    public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                        System.out.println("~~ObservableEmitter~~");
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    if (integer.equals(81))
-                                        Thread.sleep(1500L);
-                                    if (integer.equals(82))
-                                        Thread.sleep(2500L);
-                                    if (integer.equals(83))
-                                        Thread.sleep(1000L);
-                                    emitter.onNext(0);
-                                    emitter.onNext(0);
-                                    emitter.onNext(0);
-                                    System.out.println(".........emitter.onNext");
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }).start();
-                    }
-                });
+                return Observable.never();
             }
         };
 
@@ -1107,28 +1394,12 @@ public class ObservableTrial {
             }
         };
 
-
-        //方式一：同步join
         origin.join(other,
-                leftEnd,
-                rightEnd,
+                leftEnd,//左buffer定时器
+                rightEnd,//右buffer定时器
                 resultSelector)
                 .subscribe(observer);
 
-        //方式二：异步join
-//        origin = origin.subscribeOn(Schedulers.io());
-//        other = other.subscribeOn(Schedulers.io());
-//        origin.join(other,
-//                leftEnd,
-//                rightEnd,
-//                resultSelector)
-//                .subscribe(observer);
-
-        try {
-            Thread.sleep(5000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
 

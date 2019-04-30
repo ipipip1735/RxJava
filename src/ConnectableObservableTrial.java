@@ -15,13 +15,18 @@ public class ConnectableObservableTrial {
         ConnectableObservableTrial connectableObservableTrial = new ConnectableObservableTrial();
 
 
-//        connectableObservableTrial.publish(); //普通被观察者 转换为 可连接被观察者，即Hot
+        connectableObservableTrial.publish(); //普通被观察者 转换为 可连接被观察者，即Hot
 //        connectableObservableTrial.replay(); //支持重发，发送开始后，后订阅的观察者依然能接收完整数据
         /*---------------*/
 //        connectableObservableTrial.refCount(); // 可连接被观察者 转化为 普通被观察者
 //        connectableObservableTrial.autoConnect()(); //支持第一个观察者订阅后自动连接
         /*---------------*/
-        connectableObservableTrial.connect(); //发送
+//        connectableObservableTrial.connect(); //发送
+
+
+
+
+
 
     }
 
@@ -46,8 +51,7 @@ public class ConnectableObservableTrial {
                 }).start();
             }
         }).sample(1, TimeUnit.SECONDS)
-//                .publish();
-                .replay();
+                .replay(); //创建可连接被观察者
 
         connectableObservable.subscribe(integer -> System.out.println("one|" + integer));//不会理解发送，等到connect()方法调用后发送
         connectableObservable.subscribe(integer -> System.out.println("two|" + integer));
@@ -169,8 +173,6 @@ public class ConnectableObservableTrial {
 
         connectableObservable.connect();//重连
         connectableObservable.subscribe(integer -> System.out.println("two|" + integer));//再注册一个观察者，它接收不到完整的数据，前2秒发送的数据被漏掉
-
-
 
 
         try {

@@ -1,9 +1,11 @@
 import io.reactivex.*;
+import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static io.reactivex.BackpressureStrategy.*;
@@ -15,7 +17,37 @@ import static io.reactivex.BackpressureStrategy.*;
 public class FlowableTrial {
     public static void main(String[] args) {
         FlowableTrial flowableTrial = new FlowableTrial();
-        flowableTrial.create();
+//        flowableTrial.create();
+        flowableTrial.collect();
+    }
+
+    private void collect() {
+
+        Flowable<Integer> flowable = Flowable.fromArray(1, 2, 3);
+
+        Callable<Integer> initialItemSupplier = new Callable<>() {
+            @Override
+            public Integer call() throws Exception {
+                System.out.println("~~initialItemSupplier.call~~");
+                return Integer.valueOf(99);
+            }
+        };
+
+        BiConsumer<Integer, Integer> biConsumer = new BiConsumer<>() {
+            @Override
+            public void accept(Integer integer, Integer integer2) throws Exception {
+                System.out.println("~~initialItemSupplier.call~~");
+                System.out.println("integer is " + integer);
+                System.out.println("integer2 is " + integer2);
+
+            }
+        };
+
+        flowable.collect(initialItemSupplier, biConsumer)
+        .subscribe(System.out::println);
+
+
+
     }
 
     private void create() {
