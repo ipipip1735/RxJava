@@ -1027,7 +1027,6 @@ public class ObservableTrial {
                             emitter.onNext(27);
                             Thread.sleep(1000L);
                             emitter.onNext(37);
-//                emitter.onComplete();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -1043,12 +1042,9 @@ public class ObservableTrial {
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
                 System.out.println("-->>other.create.subscribe<<--");
                 System.out.println("emitter is " + emitter);
-//                Thread.sleep(1100L);
                 emitter.onNext(81);
                 emitter.onNext(82);
-                emitter.onNext(83);
 //                emitter.onNext(83);
-//                emitter.onComplete();
             }
         });
 
@@ -1076,13 +1072,21 @@ public class ObservableTrial {
                 return Observable.create(new ObservableOnSubscribe<Integer>() {
                     @Override
                     public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                        System.out.println("~~ObservableEmitter~~");
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
                                 try {
-                                    Thread.sleep(1500L);
                                     if (integer.equals(81))
-                                        emitter.onNext(0);
+                                        Thread.sleep(1500L);
+                                    if (integer.equals(82))
+                                        Thread.sleep(2500L);
+                                    if (integer.equals(83))
+                                        Thread.sleep(1000L);
+                                    emitter.onNext(0);
+                                    emitter.onNext(0);
+                                    emitter.onNext(0);
+                                    System.out.println(".........emitter.onNext");
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
