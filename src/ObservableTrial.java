@@ -49,6 +49,7 @@ public class ObservableTrial {
 //        observableTrial.first();
 //        observableTrial.last();
 //        observableTrial.take();
+//        observableTrial.takeUntil();
 //        observableTrial.skip();
 
 
@@ -90,9 +91,6 @@ public class ObservableTrial {
 //        observableTrial.doOnEach();
 //        observableTrial.doOnLifecycle();
 //        observableTrial.doOnTerminate();
-
-
-
 
 
         /*==================转换函数=====================*/
@@ -274,6 +272,21 @@ public class ObservableTrial {
             }
         }).last(-2);//如果直接发送onComplete()而无onNext(),则发送默认值-2
         single.subscribe(System.out::println);
+    }
+
+
+    private void takeUntil() {
+        Observable<Integer> observable = Observable.interval(1, TimeUnit.SECONDS).map(Long::intValue);
+        Observable<Integer> other = Observable.interval(3, TimeUnit.SECONDS).map(Long::intValue);
+
+        observable.takeUntil(other)//当other发送数据时就结束
+                .subscribe(System.out::println);
+
+        try {
+            Thread.sleep(4000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -910,43 +923,43 @@ public class ObservableTrial {
 
 
     private void cache() {
-//        Observable<Integer> observable = Observable.fromArray(11, 22, 33)
-//                .cache();//缓存
+        /*
+         * cache操作可以缓存耗时操作结果
+         * */
+
+        //方法一：使用定时器
+//        Observable<Long> observable = Observable.interval(1, TimeUnit.SECONDS)
+//                .cache();
+//        observable.subscribe(l -> System.out.println("one|" + l));//订阅后才会发送数据，第一次发送数据后结果就被缓存起来
+//        try {
+//            Thread.sleep(3000L);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 //
-//
-//        Observable<Integer> observable1 = observable.take(2);
-//
-//
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    Thread.sleep(3000L);
-//                    observable1.subscribe(integer -> System.out.println("one|integer is " + integer)); //重播
-//
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }).start();
-//
-//        observable.subscribe(integer -> System.out.println("two|integer is " + integer));
+//        observable.subscribe(l -> System.out.println("two|" + l));//后续下游直接使用缓存中的结果，不需要等待
+//        observable.subscribe(l -> System.out.println("three|" + l));//后续下游直接使用缓存中的结果，不需要等待
+//        observable.subscribe(l -> System.out.println("four|" + l));//后续下游直接使用缓存中的结果，不需要等待
+//        observable.subscribe(l -> System.out.println("five|" + l));//后续下游直接使用缓存中的结果，不需要等待
 
 
-
-        AtomicBoolean shouldStop = new AtomicBoolean();
-
-        Observable<Boolean> observable = Observable
-                .takeUntil(v -> shouldStop.get())
-                .cache()
-                .takeUntil(v -> shouldStop.get())
-                .subscribe(...);
-
-
-
-
+        //方法二：使用映射
+        Observable<String> observable = Observable.fromArray(1, 2, 3)
+                .map(new Function<Integer, String>() {
+                    @Override
+                    public String apply(Integer integer) throws Exception {
+                        System.out.println("~~map.Function.apply~~");
+                        return integer.toString();
+                    }
+                })
+                .cache();//缓存map操作的结果
 
 
+        observable.subscribe(l -> System.out.println("one|" + l));  //map操作仅在第一次需要，首次订阅后结果就被缓存起来
+        observable.subscribe(l -> System.out.println("two|" + l));  //后续下游直接使用缓存中的结果，不需要在map
+        observable.subscribe(l -> System.out.println("three|" + l));  //后续下游直接使用缓存中的结果，不需要在map
+        observable.subscribe(l -> System.out.println("four|" + l));  //后续下游直接使用缓存中的结果，不需要在map
+        observable.subscribe(l -> System.out.println("five|" + l));  //后续下游直接使用缓存中的结果，不需要在map
 
 
     }

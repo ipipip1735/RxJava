@@ -2,6 +2,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.observables.ConnectableObservable;
 
 import java.util.concurrent.TimeUnit;
@@ -22,10 +23,6 @@ public class ConnectableObservableTrial {
 //        connectableObservableTrial.autoConnect()(); //支持第一个观察者订阅后自动连接
         /*---------------*/
 //        connectableObservableTrial.connect(); //发送
-
-
-
-
 
 
     }
@@ -53,7 +50,7 @@ public class ConnectableObservableTrial {
         }).sample(1, TimeUnit.SECONDS)
                 .replay(); //创建可连接被观察者
 
-        connectableObservable.subscribe(integer -> System.out.println("one|" + integer));//不会理解发送，等到connect()方法调用后发送
+        connectableObservable.subscribe(integer -> System.out.println("one|" + integer));//不会立即发送，等到connect()方法调用后发送
         connectableObservable.subscribe(integer -> System.out.println("two|" + integer));
 
         connectableObservable.connect();//发送
@@ -96,45 +93,44 @@ public class ConnectableObservableTrial {
     }
 
     private void publish() {
-
-        ConnectableObservable<Integer> connectableObservable = Observable.create(new ObservableOnSubscribe<Integer>() {
-            @Override
-            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-
-                new Thread(new Runnable() {
+        /*
+         * 使用普通方法，map操作要执行2次，如果有n个map就需要执行2n次
+         * 但使用可连接被观察者可以缓存结果
+         * */
+        Observable<String> observable = Observable.fromArray(1,2,3)
+                .map(new Function<Integer, String>() { //map操作要执行2次
                     @Override
-                    public void run() {
-                        try {
-                            for (int i = 0; i < 6; i++) {
-                                emitter.onNext(Integer.valueOf(i));
-                                Thread.sleep(1000L);
-                            }
-                            emitter.onComplete();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                    public String apply(Integer integer) throws Exception {
+                        System.out.println("~~map.Function.apply~~");
+                        System.out.println("integer is " + integer);
+                        return integer.toString();
                     }
-                }).start();
-            }
-        }).sample(1, TimeUnit.SECONDS)
-                .publish();
+                });
+        observable.subscribe(integer -> System.out.println("one|" + integer));
+        observable.subscribe(integer -> System.out.println("two|" + integer));
+        observable.subscribe(integer -> System.out.println("three|" + integer));
 
-        connectableObservable.subscribe(integer -> System.out.println("one|" + integer));//不会立即发送，等到connect()方法调用后发送
-        connectableObservable.connect();
 
-        try {
-            Thread.sleep(2000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
-        connectableObservable.subscribe(integer -> System.out.println("two|" + integer));//无法接收到完整数据
 
-        try {
-            Thread.sleep(6000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        /*
+         * 使用可连接被观察者可以缓存结果
+         * */
+//        ConnectableObservable<String> connectableObservable = Observable.fromArray(1,2,3)
+//        .map(new Function<Integer, String>() { //map操作仅执行一次
+//            @Override
+//            public String apply(Integer integer) throws Exception {
+//                System.out.println("~~map.Function.apply~~");
+//                System.out.println("integer is " + integer);
+//                return integer.toString();
+//            }
+//        }).publish();//转化为可连接被观察者
+//
+//        connectableObservable.subscribe(integer -> System.out.println("one|" + integer));  //不会立即发送，等到connect()方法调用后发送
+//        connectableObservable.subscribe(integer -> System.out.println("two|" + integer));  //无法接收到完整数据
+//        connectableObservable.subscribe(integer -> System.out.println("three|" + integer));  //无法接收到完整数据
+//        connectableObservable.connect();
+
     }
 
 
