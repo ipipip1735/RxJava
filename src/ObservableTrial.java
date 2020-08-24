@@ -1447,16 +1447,16 @@ public class ObservableTrial {
         Integer[] tmp = {8, 9, 31, 41, 15};
 
         //方式一：基本使用
-        Observable<Integer> observable = Observable.fromArray(integers);
-        observable.subscribe(System.out::println);
+//        Observable<Integer> observable = Observable.fromArray(integers);
+//        observable.subscribe(System.out::println);
 
 
         //方式二：发送前变更数据
-//        Observable<Integer> observable = Observable.fromArray(integers);
-//        observable.subscribe(System.out::println);
-//        System.out.println("--------");
-//        integers = tmp;//由于观察者创建时，数据源已经保存了引用，所有现在修改引用是无用的
-//        observable.subscribe(System.out::println);
+        Observable<Integer> observable = Observable.fromArray(integers);
+        observable.subscribe(System.out::println);
+        System.out.println("--------");
+        integers = tmp;//由于观察者创建时，数据源已经保存了引用，所有现在修改引用是无用的
+        observable.subscribe(System.out::println);
 
 
         //方式三
