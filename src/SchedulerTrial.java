@@ -108,6 +108,41 @@ public class SchedulerTrial {
             }
         };
 
+
+
+
+
+        //方式一：使用subscribeOn()方法给所有流式操作指定线程
+//        Observable.create(new ObservableOnSubscribe<Integer>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+//                System.out.println("~~create~~");
+//                System.out.println("create|" + Thread.currentThread());
+//                emitter.onNext(1);
+//                emitter.onNext(2);
+//                emitter.onNext(3);
+//            }
+//        })
+//                .map(integer -> {
+//                    System.out.println("~~map~~");
+//                    System.out.println("map|" + Thread.currentThread());
+//                    return "one";
+//                })
+//                .subscribeOn(Schedulers.from(executor1)) //顺序不限制
+//                .filter(s -> {
+//                    System.out.println("~~filter~~");
+//                    System.out.println("filter|" + Thread.currentThread());
+//                    return true;
+//                })
+//                .observeOn(Schedulers.from(executor3)) //指定下游顺序
+//                .subscribe(integer -> {
+//                    System.out.println("~~subscribe~~");
+//                    System.out.println("subscribe|" + Thread.currentThread());
+//                });
+
+
+
+        //方式二：使用observeOn()方法给下游流式操作指定线程
         Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
@@ -123,6 +158,11 @@ public class SchedulerTrial {
                     System.out.println("~~map~~");
                     System.out.println("map|" + Thread.currentThread());
                     return "one";
+                })
+                .filter(s -> {
+                    System.out.println("~~filter~~");
+                    System.out.println("filter|" + Thread.currentThread());
+                    return true;
                 })
                 .observeOn(Schedulers.from(executor3)) //指定下游顺序
                 .subscribe(integer -> {

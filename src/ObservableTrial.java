@@ -23,7 +23,7 @@ public class ObservableTrial {
 
 
         /*================创建观察者========================*/
-//        observableTrial.create();
+        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
@@ -54,7 +54,7 @@ public class ObservableTrial {
 
 
         /*=============中间操作===========================*/
-        observableTrial.cache();
+//        observableTrial.cache();
 //        observableTrial.repeat();
         /*-----------------*/
 //        observableTrial.map();
