@@ -16,53 +16,33 @@ public class CompositeDisposableTrial {
         CompositeDisposable compositeDisposable = new CompositeDisposable();
 
 
-        Disposable disposable = Observable.range(0, 20)
-                .observeOn(Schedulers.io())
+        Disposable disposable = Observable.interval(1000L, TimeUnit.MILLISECONDS)
                 .doOnDispose(() -> {
                     System.out.println("~~doOnDispose1~~");
-                    System.out.println(Thread.currentThread());
+                    System.out.println("obs1|" + Thread.currentThread());
                 })
-                .forEach(n -> {
-                    try {
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println(n);
-                });
+                .forEach(n -> System.out.println("obs1|" + n));
         compositeDisposable.add(disposable);
 
-        compositeDisposable.add(Observable.range(0, 20)
-                .observeOn(Schedulers.io())
-                .map(n -> n + 100)
+        compositeDisposable.add(Observable.interval(1000L, TimeUnit.MILLISECONDS)
+                .map(n -> n * 2)
                 .doOnDispose(() -> {
                     System.out.println("~~doOnDispose2~~");
-                    System.out.println(Thread.currentThread());
+                    System.out.println("obs2|" + Thread.currentThread());
                 })
-                .forEach(n -> {
-                    try {
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println(n);
-                }));
-
-
-
+                .forEach(n -> System.out.println("obs2|" + n)));
 
         try {
             Thread.sleep(3000L);
-            compositeDisposable.dispose();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-
+        compositeDisposable.dispose();
 
 
         try {
-            Thread.sleep(60000L);
+            Thread.sleep(6000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
