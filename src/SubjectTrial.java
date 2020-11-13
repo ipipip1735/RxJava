@@ -66,5 +66,7 @@ public class SubjectTrial {
     public static void main(String[] args) {
         SubjectTrial subjectTrial = new SubjectTrial();
 
+        
+
     }
 }

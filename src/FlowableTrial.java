@@ -17,8 +17,8 @@ import static io.reactivex.BackpressureStrategy.*;
 public class FlowableTrial {
     public static void main(String[] args) {
         FlowableTrial flowableTrial = new FlowableTrial();
-//        flowableTrial.create();
-        flowableTrial.collect();
+        flowableTrial.create();
+//        flowableTrial.collect();
     }
 
     private void collect() {
