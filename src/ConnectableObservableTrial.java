@@ -16,8 +16,8 @@ public class ConnectableObservableTrial {
         ConnectableObservableTrial connectableObservableTrial = new ConnectableObservableTrial();
 
 
-//        connectableObservableTrial.publish(); //普通被观察者 转换为 可连接被观察者，即Hot
-        connectableObservableTrial.replay(); //支持重发，发送开始后，后订阅的观察者依然能接收完整数据
+        connectableObservableTrial.publish(); //普通被观察者 转换为 可连接被观察者，即Hot
+//        connectableObservableTrial.replay(); //支持重发，发送开始后，后订阅的观察者依然能接收完整数据
         /*---------------*/
 //        connectableObservableTrial.refCount(); // 可连接被观察者 转化为 普通被观察者
 //        connectableObservableTrial.autoConnect(); //支持第一个观察者订阅后自动连接

@@ -17,6 +17,7 @@ import static io.reactivex.BackpressureStrategy.*;
 public class FlowableTrial {
     public static void main(String[] args) {
         FlowableTrial flowableTrial = new FlowableTrial();
+
         flowableTrial.create();
 //        flowableTrial.collect();
     }
@@ -46,17 +47,16 @@ public class FlowableTrial {
         flowable.collect(initialItemSupplier, biConsumer)
         .subscribe(System.out::println);
 
-
-
     }
 
     private void create() {
 
-//        System.setProperty("rx2.buffer-size", "2");
-//        System.out.println("Flowable.bufferSize() is " + Flowable.bufferSize());
+        //环境配置
+//        System.setProperty("rx2.buffer-size", "22");
+//        System.out.println("Flowable.bufferSize() is " + Flowable.bufferSize());//默认背压buffer尺寸为128
 
 
-        //订阅器
+        //订阅者
         Subscriber<Integer> subscriber = new Subscriber<>() {
             Subscription s = null;
             private long begin = System.currentTimeMillis();
@@ -97,13 +97,14 @@ public class FlowableTrial {
             }
         };
 
-        //发送器
+
+        //发送器（支持背压）
         FlowableOnSubscribe<Integer> flowableOnSubscribe = new FlowableOnSubscribe<>() {
             @Override
             public void subscribe(FlowableEmitter<Integer> emitter) throws Exception {
                 System.out.println("~~create.subscribe~~");
 
-                long begin = System.currentTimeMillis();
+//                long begin = System.currentTimeMillis();
                 for (int i = 0; i<500; ++i) {
                     emitter.onNext(i);
                 }
@@ -115,6 +116,7 @@ public class FlowableTrial {
         //Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, DROP);
         Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, LATEST);
 //        Flowable<Integer> flowable = Flowable.create(flowableOnSubscribe, BUFFER);
+
         flowable.observeOn(Schedulers.newThread()).subscribe(subscriber);
 
         try {
