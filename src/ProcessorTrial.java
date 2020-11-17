@@ -1,4 +1,5 @@
 import io.reactivex.Flowable;
+import io.reactivex.internal.queue.SpscArrayQueue;
 import io.reactivex.processors.*;
 import io.reactivex.subjects.BehaviorSubject;
 import org.reactivestreams.Subscriber;
@@ -17,9 +18,9 @@ public class ProcessorTrial {
         ProcessorTrial processorTrial = new ProcessorTrial();
 
 //        processorTrial.publishProcessor();
-//        processorTrial.multicastProcessor();
+        processorTrial.multicastProcessor();
 //        processorTrial.unicastProcessor();
-        processorTrial.replayProcessor();
+//        processorTrial.replayProcessor();
 //        processorTrial.asyncProcessor();
 //        processorTrial.behaviorProcessor();
     }
@@ -77,29 +78,43 @@ public class ProcessorTrial {
 
     private void multicastProcessor() {
 
-//        MulticastProcessor<Long> multicastProcessor = MulticastProcessor.create(true);
-        MulticastProcessor<Long> multicastProcessor = MulticastProcessor.create(2);
+        //基本使用
+////        MulticastProcessor<Long> multicastProcessor = MulticastProcessor.create(true);
+//        MulticastProcessor<Long> multicastProcessor = MulticastProcessor.create(2);
+//
+//        multicastProcessor.subscribe(new LongSubscribe("one"));
+//
+//        Flowable.interval(1L, TimeUnit.SECONDS)
+//                .subscribe(multicastProcessor);
+//
+//        try {
+//            Thread.sleep(5000L);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        multicastProcessor.subscribe(new LongSubscribe("two"));
+//
+//
+//        try {
+//            Thread.sleep(200000L);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
-        multicastProcessor.subscribe(new LongSubscribe("one"));
 
-        Flowable.interval(1L, TimeUnit.SECONDS)
-                .subscribe(multicastProcessor);
 
-        try {
-            Thread.sleep(5000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+
+        //使用offer()发送数据
+        MulticastProcessor<Integer> multicastProcessor = MulticastProcessor.create(2);
+        multicastProcessor.start();
+
+//        multicastProcessor.subscribe(System.out::println);
+
+        for (int i = 0; i < 5; i++) {
+            multicastProcessor.offer(i);
         }
-
-        multicastProcessor.subscribe(new LongSubscribe("two"));
-
-
-        try {
-            Thread.sleep(200000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        multicastProcessor.subscribe(System.out::println);
     }
 
     private void publishProcessor() {
@@ -125,8 +140,8 @@ public class ProcessorTrial {
         @Override
         public void onSubscribe(Subscription s) {
             System.out.println("[" + tag + "]~~onSubscribe~~");
-            System.out.println("[" + tag + "]Subscription is " + s.hashCode() + "|" + s);
-            this.s = s;
+//            System.out.println("[" + tag + "]Subscription is " + s.hashCode() + "|" + s);
+//            this.s = s;
             s.request(1);
         }
 
