@@ -141,7 +141,7 @@ public class ProcessorTrial {
         public void onSubscribe(Subscription s) {
             System.out.println("[" + tag + "]~~onSubscribe~~");
 //            System.out.println("[" + tag + "]Subscription is " + s.hashCode() + "|" + s);
-//            this.s = s;
+            this.s = s;
             s.request(1);
         }
 
