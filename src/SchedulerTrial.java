@@ -18,9 +18,12 @@ public class SchedulerTrial {
 
 
         /*---显式调用---*/
-        schedulerTrial.schedulerFrom();
+//        schedulerTrial.schedulerFrom();
 //        schedulerTrial.schedulerIO();
 //        schedulerTrial.scheduler();
+
+        /*---使用调度器---*/
+        schedulerTrial.doWork();
 
 
         /*---隐式调用---*/
@@ -30,6 +33,32 @@ public class SchedulerTrial {
 //        schedulerTrial.timer();
 //        schedulerTrial.sampler();
 
+
+
+    }
+
+    private void doWork() {
+
+        Scheduler scheduler = Schedulers.single();//创建单线程线程池
+        scheduler.scheduleDirect(() -> {
+
+            for (int i = 0; i <3; i++) {
+
+                try {
+                    Thread.sleep(1000L);
+                    System.out.println("Time is " + scheduler.now(TimeUnit.SECONDS));//打印当前时间戳
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+
+        try {
+            Thread.sleep(6000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 

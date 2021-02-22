@@ -5,6 +5,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.*;
 import io.reactivex.observables.ConnectableObservable;
 import io.reactivex.observables.GroupedObservable;
+import io.reactivex.observers.ResourceObserver;
 import io.reactivex.schedulers.Schedulers;
 
 import java.util.*;
@@ -22,11 +23,12 @@ public class ObservableTrial {
         ObservableTrial observableTrial = new ObservableTrial();
 
 
-        /*================创建观察者========================*/
-        observableTrial.create();
+        /*================创建可观察者========================*/
+//        observableTrial.create();
 //        observableTrial.from();
 //        observableTrial.just();
 //        observableTrial.range();
+
         /*-------异步创建----------*/
 //        observableTrial.timer(); //定时发送一次
 //        observableTrial.interval(); //间隔发送
@@ -98,7 +100,6 @@ public class ObservableTrial {
 //        observableTrial.as();//同功能和to()类似
 
     }
-
 
     private void as() {
         String info = Observable.just(1).as(new ObservableConverter<Integer, String>() {

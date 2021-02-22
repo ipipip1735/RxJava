@@ -1,8 +1,13 @@
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import io.reactivex.observers.ResourceObserver;
+import io.reactivex.schedulers.Schedulers;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Administrator on 2019/4/18 14:40.
@@ -12,9 +17,58 @@ public class DisposableObserver {
     public static void main(String[] args) {
         DisposableObserver disposableTrial = new DisposableObserver();
 
-        disposableTrial.base();
+//        disposableTrial.base();
+        disposableTrial.resourceObserver();
 
     }
+
+
+    private void resourceObserver() {
+
+
+
+
+//        Disposable d = Observable
+//                .range(1, 5)
+//                .subscribeWith(new ResourceObserver<Integer>() {
+//                    @Override
+//                    public void onStart() {
+//                        System.out.println("~~" + getClass().getSimpleName() + ".onStart~~");
+//
+//
+//
+////                        add(Schedulers.single()
+////                                .scheduleDirect(() -> System.out.println("Time!"),
+////                                        2, TimeUnit.SECONDS));
+////                                request(1);
+//                    }
+//
+//                    @Override
+//                    public void onNext(Integer t) {
+//                        System.out.println("~~" + getClass().getSimpleName() + ".onNext~~");
+//                        if (t == 3) {
+//                            dispose();
+//                        }
+//                        System.out.println(t);
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable t) {
+//                        System.out.println("~~" + getClass().getSimpleName() + ".onError~~");
+//                        t.printStackTrace();
+//                        dispose();
+//                    }
+//
+//                    @Override
+//                    public void onComplete() {
+//                        System.out.println("~~" + getClass().getSimpleName() + ".onComplete~~");
+//                        dispose();
+//                    }
+//                });
+//
+//        d.dispose();
+    }
+
 
     private void base() {
         //创建被观察者
@@ -88,7 +142,6 @@ public class DisposableObserver {
                 }
             }
         }).start();
-
 
 
     }
