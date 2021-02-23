@@ -2,6 +2,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Scheduler;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.observers.ResourceObserver;
@@ -26,47 +27,48 @@ public class DisposableObserver {
     private void resourceObserver() {
 
 
+        Disposable disposable = Observable.range(1, 5)
+                .subscribeWith(new ResourceObserver<Integer>() {
+                    @Override
+                    public void onNext(@NonNull Integer integer) {
+                        System.out.println("~~.onNext~~");
+                        System.out.println("integer = " + integer);
+                        add(Schedulers.single().scheduleDirect(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    Thread.sleep(1000L);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                System.out.println("Loading URL" + integer);
+                            }
+                        }));
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        System.out.println("~~onError~~");
+                        dispose();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        System.out.println("~~onComplete~~");
+                        try {
+                            Thread.sleep(20000L);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        dispose();
+                    }
+                });
 
 
-//        Disposable d = Observable
-//                .range(1, 5)
-//                .subscribeWith(new ResourceObserver<Integer>() {
-//                    @Override
-//                    public void onStart() {
-//                        System.out.println("~~" + getClass().getSimpleName() + ".onStart~~");
-//
-//
-//
-////                        add(Schedulers.single()
-////                                .scheduleDirect(() -> System.out.println("Time!"),
-////                                        2, TimeUnit.SECONDS));
-////                                request(1);
-//                    }
-//
-//                    @Override
-//                    public void onNext(Integer t) {
-//                        System.out.println("~~" + getClass().getSimpleName() + ".onNext~~");
-//                        if (t == 3) {
-//                            dispose();
-//                        }
-//                        System.out.println(t);
-//                    }
-//
-//                    @Override
-//                    public void onError(Throwable t) {
-//                        System.out.println("~~" + getClass().getSimpleName() + ".onError~~");
-//                        t.printStackTrace();
-//                        dispose();
-//                    }
-//
-//                    @Override
-//                    public void onComplete() {
-//                        System.out.println("~~" + getClass().getSimpleName() + ".onComplete~~");
-//                        dispose();
-//                    }
-//                });
-//
-//        d.dispose();
+
+//        disposable.dispose();
+
     }
 
 

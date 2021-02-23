@@ -20,10 +20,7 @@ public class SchedulerTrial {
         /*---显式调用---*/
 //        schedulerTrial.schedulerFrom();
 //        schedulerTrial.schedulerIO();
-//        schedulerTrial.scheduler();
-
-        /*---使用调度器---*/
-        schedulerTrial.doWork();
+        schedulerTrial.scheduler();
 
 
         /*---隐式调用---*/
@@ -34,31 +31,6 @@ public class SchedulerTrial {
 //        schedulerTrial.sampler();
 
 
-
-    }
-
-    private void doWork() {
-
-        Scheduler scheduler = Schedulers.single();//创建单线程线程池
-        scheduler.scheduleDirect(() -> {
-
-            for (int i = 0; i <3; i++) {
-
-                try {
-                    Thread.sleep(1000L);
-                    System.out.println("Time is " + scheduler.now(TimeUnit.SECONDS));//打印当前时间戳
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        });
-
-        try {
-            Thread.sleep(6000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -204,33 +176,33 @@ public class SchedulerTrial {
     private void scheduler() {
 
         //方式一：使用内置守护线程
-        Observable<String> observable = Observable.create(new ObservableOnSubscribe<String>() {
-            @Override
-            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
-                emitter.onNext("aaa");
-                emitter.onNext("bbb");
-                System.out.println("ssss");
-                emitter.onNext("ccc");
-                emitter.onNext("dddd");
-                emitter.onComplete();
-                System.out.println(Thread.currentThread());
-            }
-        }).subscribeOn(Schedulers.io()); //使用调度器创建的守护线程
-
-        observable.observeOn(Schedulers.io()) //使用调度器创建的守护线程
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) throws Exception {
-                        System.out.println(s);
-                        System.out.println(Thread.currentThread());
-                    }
-                });
-
-        try {
-            Thread.sleep(3000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        Observable<String> observable = Observable.create(new ObservableOnSubscribe<String>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+//                emitter.onNext("aaa");
+//                emitter.onNext("bbb");
+//                System.out.println("ssss");
+//                emitter.onNext("ccc");
+//                emitter.onNext("dddd");
+//                emitter.onComplete();
+//                System.out.println(Thread.currentThread());
+//            }
+//        }).subscribeOn(Schedulers.io()); //使用调度器创建的守护线程
+//
+//        observable.observeOn(Schedulers.io()) //使用调度器创建的守护线程
+//                .subscribe(new Consumer<String>() {
+//                    @Override
+//                    public void accept(String s) throws Exception {
+//                        System.out.println(s);
+//                        System.out.println(Thread.currentThread());
+//                    }
+//                });
+//
+//        try {
+//            Thread.sleep(3000L);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
 
         //方式二：自定义线程
@@ -268,6 +240,31 @@ public class SchedulerTrial {
 //
 //                    }
 //                });
+
+
+        //方式三：直接调度
+        Scheduler scheduler = Schedulers.single();//创建单线程线程池
+        scheduler.scheduleDirect(() -> {
+
+            for (int i = 0; i <3; i++) {
+
+                try {
+                    Thread.sleep(1000L);
+                    System.out.println("Time is " + scheduler.now(TimeUnit.SECONDS));//打印当前时间戳
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+
+        try {
+            Thread.sleep(6000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
 
     }
 

@@ -1,6 +1,7 @@
 import io.reactivex.*;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.*;
 import io.reactivex.observables.ConnectableObservable;
@@ -68,6 +69,7 @@ public class ObservableTrial {
 //        observableTrial.zip();
 //        observableTrial.join();
 //        observableTrial.merge();
+        observableTrial.compose();
 
 
 
@@ -99,6 +101,43 @@ public class ObservableTrial {
 //        observableTrial.to();//将被观察者转换为任意对象
 //        observableTrial.as();//同功能和to()类似
 
+    }
+
+    private void compose() {
+
+        //方式一
+//        ObservableTransformer<Integer, String> observableTransformer = new ObservableTransformer<>() {
+//
+//            @NonNull
+//            @Override
+//            public ObservableSource<String> apply(@NonNull Observable<Integer> upstream) {
+//                System.out.println("~~apply~~");
+//                System.out.println("upstream = " + upstream);
+//
+//                return upstream.map(Object::toString)
+//                        .subscribeOn(Schedulers.io())
+//                        .observeOn(Schedulers.io());
+//            }
+//        };
+//
+//        Observable.range(1, 10)
+//                .compose(observableTransformer)
+//                .subscribe(System.out::println);
+
+
+        //方式二：使用Lambda表达式
+        Observable.range(1, 10)
+                .compose(observable -> observable.map(Object::toString)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(Schedulers.io()))
+                .subscribe(System.out::println);
+
+
+        try {
+            Thread.sleep(2000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void as() {
