@@ -16,11 +16,11 @@ public class SubjectTrial {
     public static void main(String[] args) {
         SubjectTrial subjectTrial = new SubjectTrial();
 
-//        subjectTrial.publishSubject();
+        subjectTrial.publishSubject();
 //        subjectTrial.asyncSubject();
 //        subjectTrial.replaySubject();
 //        subjectTrial.unicastSubject();
-        subjectTrial.behaviorSubject();
+//        subjectTrial.behaviorSubject();
 
 
     }
@@ -79,23 +79,23 @@ public class SubjectTrial {
 
 
         //方式二
-//        PublishSubject<Integer> publishSubject = PublishSubject.create();
-//
-//        publishSubject.subscribe(new IntegerObserver("one"));
-//        publishSubject.map(n -> n * 2).subscribe(new IntegerObserver("two"));
-//
-//        Observable<Integer> observable = Observable.just(11, 22, 33, 44);
-//        observable.subscribe(publishSubject);
+        PublishSubject<Integer> publishSubject = PublishSubject.create();
+
+        publishSubject.subscribe(new IntegerObserver("one"));
+        publishSubject.map(n -> n * 2).subscribe(new IntegerObserver("two"));
+
+        Observable<Integer> observable = Observable.just(11, 22, 33, 44);
+        observable.subscribe(publishSubject);
 
 
         //方式三
-        Subject<Object> publishSubject = PublishSubject.create()
-                .toSerialized();
-
-        publishSubject.cast(Integer.class).subscribe(new IntegerObserver("one"));
-        publishSubject.cast(Integer.class).subscribe(new IntegerObserver("two"));
-        Observable<Integer> observable = Observable.just(11, 22, 33, 44);
-        observable.subscribe(publishSubject);
+//        Subject<Object> publishSubject = PublishSubject.create()
+//                .toSerialized();
+//
+//        publishSubject.cast(Integer.class).subscribe(new IntegerObserver("one"));
+//        publishSubject.cast(Integer.class).subscribe(new IntegerObserver("two"));
+//        Observable<Integer> observable = Observable.just(11, 22, 33, 44);
+//        observable.subscribe(publishSubject);
 
 
     }
