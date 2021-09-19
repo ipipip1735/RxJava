@@ -18,8 +18,16 @@ public class FlowableTrial {
     public static void main(String[] args) {
         FlowableTrial flowableTrial = new FlowableTrial();
 
-        flowableTrial.create();
+//        flowableTrial.create();
 //        flowableTrial.collect();
+        flowableTrial.defer();
+    }
+
+    private void defer() {
+
+        Flowable.defer(() -> Flowable.just(4, 3, 6))
+                .subscribe(System.out::println);
+
     }
 
     private void collect() {
